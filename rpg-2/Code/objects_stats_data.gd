@@ -19,6 +19,12 @@ signal health_depleted
 @export var base_graze_chance: float = 20.0 # Base 20%
 @export var base_graze_multiplier: float = 0.5 # 50% damage
 
+@export_group("Spell Attributes")
+@export var base_spell_accuracy: float = 90.0
+@export var base_spell_evasion: float = 10.0
+@export var base_spell_graze_chance: float = 40.0
+@export var spell_resistance_chance: float = 10.0 # The 10% base resist
+
 @export_group("Resistances")
 @export var resistances: Dictionary[Globals.DamageType, float] = {
 	Globals.DamageType.PHYSICAL: 0.0,

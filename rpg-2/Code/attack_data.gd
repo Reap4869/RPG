@@ -7,6 +7,7 @@ enum HitResult { MISS, GRAZE, HIT, CRIT }
 
 @export_group("Identity")
 @export var attack_name: String = "Basic Attack"
+@export var category: Globals.AttackCategory = Globals.AttackCategory.PHYSICAL
 @export var attack_desc: String = "Description" 
 @export var icon: Texture2D
 
@@ -68,6 +69,8 @@ enum HitResult { MISS, GRAZE, HIT, CRIT }
 
 # This function handles the "How much damage?" logic
 func get_damage_data(attacker_stats: Stats, defender_stats: Resource) -> Array:
+	if category == Globals.AttackCategory.SPELL:
+		return _get_spell_result(attacker_stats, defender_stats)
 	var roll = randf() * 100.0
 	var result = HitResult.MISS
 	
@@ -150,3 +153,21 @@ func _get_scaling_bonus(s: Stats) -> float:
 		ScalingStat.INTELLIGENCE: return s.current_intelligence
 		ScalingStat.AGILITY: return s.current_agility
 	return 0.0
+
+func _get_spell_result(attacker: Resource, defender: Resource) -> Array:
+	var roll = randf() * 100.0
+	
+	# 1. Check for flat Resistance (10% base)
+	var resist_chance = defender.spell_resistance_chance
+	if roll <= resist_chance:
+		return [0.0, HitResult.MISS] # Resisted!
+		
+	# 2. Check for Graze (40% chance)
+	# Roll is now between 10 and 100. 
+	# If we want a 40% chance of the total, we check the next slice.
+	var graze_ceiling = resist_chance + defender.base_spell_graze_chance
+	if roll <= graze_ceiling:
+		return [0.5, HitResult.GRAZE] # Half effect
+		
+	# 3. Full Success (Remaining 50%)
+	return [1.0, HitResult.HIT]

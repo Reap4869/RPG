@@ -291,24 +291,32 @@ func _apply_attack_damage(attack: AttackResource, attacker: Unit, victim: Node2D
 	var data = attack.get_damage_data(attacker.stats, victim.stats)
 	var damage = data[0]
 	var result = data[1]
+	var effect_multiplier = data[0] # 1.0, 0.5, or 0.0
+	
+	if attack.category == Globals.AttackCategory.SPELL:
+		if result == attack.HitResult.MISS:
+			_spawn_damage_number(0, victim.global_position, attack.damage_type, result, "RESISTED")
+		else:
+			_apply_spell_effect(attack, victim, effect_multiplier)
+	else:
+	
+		# NEW: Spawn the number here (Even for a MISS, we can show "MISS")
+		_spawn_damage_number(roundi(damage), victim.global_position, attack.damage_type, result)
 
-	# NEW: Spawn the number here (Even for a MISS, we can show "MISS")
-	_spawn_damage_number(roundi(damage), victim.global_position, attack.damage_type, result)
+		if result == attack.HitResult.MISS:
+			_send_to_log("%s missed %s!" % [attacker.name, victim.name], Color.GRAY)
+			return
 
-	if result == attack.HitResult.MISS:
-		_send_to_log("%s missed %s!" % [attacker.name, victim.name], Color.GRAY)
-		return
-
-	# Apply Health Change
-	# --- FIXED: Apply damage to Units OR Objects ---
-	if victim is Unit:
-		victim.stats.take_damage(damage)
-		victim.play_hit_flash()
-		if attack.buff_to_apply:
-			victim.stats.add_buff(attack.buff_to_apply)
-			
-	elif victim is WorldObject:
-		victim.stats.take_damage(damage)
+		# Apply Health Change
+		# --- FIXED: Apply damage to Units OR Objects ---
+		if victim is Unit:
+			victim.stats.take_damage(damage)
+			victim.play_hit_flash()
+			if attack.buff_to_apply:
+				victim.stats.add_buff(attack.buff_to_apply)
+				
+		elif victim is WorldObject:
+			victim.stats.take_damage(damage)
 
 	# Combat Log
 	var type_color = Globals.DAMAGE_COLORS.get(attack.damage_type, Color.WHITE)

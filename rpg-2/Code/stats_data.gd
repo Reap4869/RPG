@@ -52,6 +52,12 @@ signal mana_changed(cur_mana: float, max_mana: float)
 @export var base_graze_chance: float = 20.0 # Base 20%
 @export var base_graze_multiplier: float = 0.5 # 50% damage
 
+@export_group("Spell Attributes")
+@export var base_spell_accuracy: float = 0.0
+@export var base_spell_evasion: float = 0.0
+@export var base_spell_graze_chance: float = 40.0
+@export var spell_resistance_chance: float = 10.0 # The 10% base resist
+
 # Current Calculated Attributes
 var current_strength: float
 var current_agility: float
