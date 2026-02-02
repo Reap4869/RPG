@@ -438,27 +438,20 @@ func _setup_camera(map_resource: MapData) -> void:
 
 # --- MOVEMENT ---
 
-func _spawn_damage_number(amount: int, position: Vector2, damage_type: Globals.DamageType, result: AttackResource.HitResult) -> void:
-	var label = Label.new()
-	label.scale = Vector2(2.0, 2.0)
+func _spawn_damage_number(value: int, pos: Vector2, type: Globals.DamageType, result: AttackResource.HitResult, text_override: String = "") -> void:
+	var dmg_num = DAMAGE_NUMBER_SCENE.instantiate()
+	# Add to Game or UI layer
+	add_child(dmg_num) 
 	
-	# Handle MISS/GRAZE/CRIT text
-	if result == AttackResource.HitResult.MISS:
-		label.text = "MISS"
-	else:
-		label.text = str(amount)
-	
+	# If text_override has content (like "RESISTED"), use it. 
+	# Otherwise, use the damage number.
+	var display_text = text_override if text_override != "" else str(value)
+	dmg_num.setup(display_text, pos, type, result)
 	# Setup styling
-	
+	label.scale = Vector2(2.0, 2.0)
 	# 2. Outline (This makes it readable on any background)
 	label.add_theme_constant_override("outline_size", 4) # Thickness of the outline
 	label.add_theme_color_override("font_outline_color", Color.BLACK)
-	
-	# 3. Shadow (Adds a 3D depth effect)
-	#label.add_theme_constant_override("shadow_offset_x", 2)
-	#label.add_theme_constant_override("shadow_offset_y", 2)
-	#label.add_theme_color_override("font_shadow_color", Color.BLACK)
-	#label.add_theme_constant_override("outline_size", 6)
 	
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.z_index = 100 
