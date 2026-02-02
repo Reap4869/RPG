@@ -169,19 +169,17 @@ func add_buff(buff_res: BuffResource, is_graze: bool = false):
 		if b.resource.buff_name == buff_res.buff_name:
 			b.remaining = max(b.remaining, dur)
 			return
-
 	active_buffs.append({ "resource": buff_res, "remaining": dur })
 
-func apply_turn_start_buffs(victim_unit: Node2D):
+func apply_turn_start_buffs(victim_unit: Unit, game_ref: Node) -> void:
 	var to_remove = []
 	for b in active_buffs:
-		# 1. Deal Tick Damage
+		# Tick Damage logic
 		if b.resource.damage_per_tick > 0:
-			# Call back to game_node to handle damage/vfx
-			var game = victim_unit.get_parent() 
-			game._apply_tick_damage(victim_unit, b.resource.damage_per_tick, b.resource.damage_type)
+			# Now we use the game_ref we just passed in!
+			game_ref._apply_tick_damage(victim_unit, b.resource.damage_per_tick, b.resource.damage_type)
 		
-		# 2. Reduce Duration
+		# Duration logic
 		if not b.resource.is_permanent:
 			b.remaining -= 1
 			if b.remaining <= 0:

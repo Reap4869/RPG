@@ -329,6 +329,21 @@ func _apply_attack_damage(attack: AttackResource, attacker: Unit, victim: Node2D
 		else:
 			_handle_object_death(victim)
 
+func _apply_tick_damage(victim: Unit, amount: int, type: Globals.DamageType) -> void:
+	# 1. Reduce health
+	victim.stats.health -= amount
+	
+	# 2. Show the number
+	_spawn_damage_number(amount, victim.global_position, type, AttackResource.HitResult.HIT)
+	
+	# 3. Visual feedback
+	if victim.has_method("play_hit_flash"):
+		victim.play_hit_flash()
+	
+	# 4. Death check (since this happens at turn start)
+	if victim.stats.health <= 0:
+		_handle_unit_death(victim)
+
 # --- SELECTION & HIGHLIGHTS ---
 
 func _handle_selection(cell: Vector2i) -> void:
@@ -439,14 +454,11 @@ func _setup_camera(map_resource: MapData) -> void:
 # --- MOVEMENT ---
 
 func _spawn_damage_number(value: int, pos: Vector2, type: Globals.DamageType, result: AttackResource.HitResult, text_override: String = "") -> void:
-	var dmg_num = $UI.instantiate()
-	# Add to Game or UI layer
-	add_child(dmg_num) 
-	
-	# If we are using a simple Label inside the scene, we need to find it
-	var label = dmg_num.get_node("Label") # Make sure your scene has a Label node!
+	var label = Label.new() # Create the node directly
+	add_child(label)
 	
 	var display_text = text_override if text_override != "" else str(value)
+	
 	# Setup styling
 	label.text = display_text
 	label.scale = Vector2(2.0, 2.0)
@@ -463,7 +475,7 @@ func _spawn_damage_number(value: int, pos: Vector2, type: Globals.DamageType, re
 		label.scale = Vector2(3.0, 3.0)
 		label.add_theme_constant_override("outline_size", 4)
 	
-	dmg_num.global_position = pos + Vector2(-10, -20) # Start closer to unit head
+	label.global_position = pos + Vector2(-10, -20) # Start closer to unit head
 	world.add_child(label)
 	
 	var tween = create_tween().set_parallel(true)
@@ -627,12 +639,27 @@ func _get_aoe_tiles(center: Vector2i, aoe_range: int, shape: Globals.AreaShape) 
 # --- TURNS ---
 
 func _start_unit_turn(unit: Unit):
-	unit.stats.apply_turn_start_buffs(unit)
-	# Check if tick damage killed the unit!
+	# Pass 'self' so the stats can call _apply_tick_damage back in this script
+	unit.stats.apply_turn_start_buffs(unit, self) 
+	
 	if unit.stats.health <= 0:
 		_handle_unit_death(unit)
-		_advance_turn() # Skip to next unit
+		# We need to decide what to call here based on whose turn it is
+		if Globals.current_state == Globals.TurnState.ENEMY_TURN:
+			_process_next_enemy()
 		return
+
+func _start_player_turn() -> void:
+	print("--- PLAYER TURN ---")
+	Globals.current_state = Globals.TurnState.PLAYER_TURN
+	
+	# Loop through all player units to process their buffs/burns
+	for unit in player_team.get_children():
+		if unit is Unit:
+			_start_unit_turn(unit)
+			
+	map_manager.tick_surfaces()
+	player_team.replenish_all_stamina()
 
 func _on_end_turn_button_pressed() -> void:
 	if Globals.current_state == Globals.TurnState.PLAYER_TURN:
@@ -659,29 +686,24 @@ func _process_next_enemy() -> void:
 
 	var current_enemy = enemy_queue.pop_front()
 	
-	# STRICT CHECK: Must be a Unit AND have AI
-	if current_enemy is Unit and current_enemy.data and current_enemy.data.ai_behavior:
-		print("Processing AI for: ", current_enemy.name)
+	if current_enemy is Unit:
+		# 1. Process Poison/Burn/Buffs first!
+		_start_unit_turn(current_enemy)
 		
-		var ai = current_enemy.data.ai_behavior
-		if not ai.decision_completed.is_connected(_process_next_enemy):
-			ai.decision_completed.connect(_process_next_enemy, CONNECT_ONE_SHOT)
-		
-		ai.make_decision(current_enemy, self, map_manager)
-	else:
-		# This is where @Node2D@3 ends up. 
-		# We just print a skip message and move to the next one.
-		print("Skipping non-unit node in EnemyGroup: ", current_enemy.name)
-		_process_next_enemy()
+		# 2. Check if the buff killed them before they could act
+		if current_enemy.stats.health <= 0:
+			# _start_unit_turn already handled death, so we just move to next
+			_process_next_enemy()
+			return
 
-func _start_player_turn() -> void:
-	print("--- PLAYER TURN ---")
-	_send_to_log("--- PLAYER TURN ---", Color.WHITE)
-	Globals.current_state = Globals.TurnState.PLAYER_TURN
-	map_manager.tick_surfaces() # Surfaces decay at the start of a new round
-	player_team.replenish_all_stamina()
-	# Optional: Select the first player unit automatically
-	select_player_unit()
+		# 3. If alive, proceed with AI
+		if current_enemy.data and current_enemy.data.ai_behavior:
+			var ai = current_enemy.data.ai_behavior
+			if not ai.decision_completed.is_connected(_process_next_enemy):
+				ai.decision_completed.connect(_process_next_enemy, CONNECT_ONE_SHOT)
+			ai.make_decision(current_enemy, self, map_manager)
+	else:
+		_process_next_enemy()
 
 # --- END CONDITIONS ---
 
