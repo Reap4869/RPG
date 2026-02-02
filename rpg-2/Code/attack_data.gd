@@ -121,7 +121,7 @@ func get_damage_data(attacker_stats: Resource, defender_stats: Resource) -> Arra
 	var total_pre_resist = flat_damage + final_dice_damage
 	
 	# Resistances (Fire, Water, etc. work exactly the same for Spells/Phys)
-	var resist_pct = defender_stats.resistances.get(damage_type, 0.0)
+	var resist_pct = defender_stats.get_resistance(damage_type)
 	var final_damage = total_pre_resist * (1.0 - resist_pct)
 
 	# --- 3. CONSOLE LOGGING (With "Resisted" Support) ---

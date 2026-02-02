@@ -213,6 +213,20 @@ func _apply_buff_logic() -> void:
 func take_damage(amount: float) -> void:
 	health -= amount
 
+func get_resistance(type: Globals.DamageType) -> float:
+	# Start with the base resistance from the dictionary
+	var total_resist = resistances.get(type, 0.0)
+	
+	# Mapping DamageType to the string names used in your BuffResource
+	# Ensure your Burn resource uses "fire_resistance", "water_resistance", etc.
+	var type_string = Globals.DamageType.keys()[type].to_lower() + "_resistance"
+	
+	# Add modifiers from active buffs
+	for b in active_buffs:
+		if b.resource.stat_modifiers.has(type_string):
+			total_resist += b.resource.stat_modifiers[type_string]
+			
+	return total_resist
 # --- Setters ---
 
 func _on_health_set(value: float) -> void:

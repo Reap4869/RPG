@@ -330,17 +330,24 @@ func _apply_attack_damage(attack: AttackResource, attacker: Unit, victim: Node2D
 			_handle_object_death(victim)
 
 func _apply_tick_damage(victim: Unit, amount: int, type: Globals.DamageType) -> void:
-	# 1. Reduce health
-	victim.stats.health -= amount
+	# 1. Calculate mitigated damage based on buffs/base stats
+	var resist_pct = victim.stats.get_resistance(type)
+	var final_amount = roundi(amount * (1.0 - resist_pct))
 	
-	# 2. Show the number
-	_spawn_damage_number(amount, victim.global_position, type, AttackResource.HitResult.HIT)
+	# If fully resisted, we still might want to show "0" or "Resisted"
+	if final_amount <= 0 and amount > 0:
+		_spawn_damage_number(0, victim.global_position, type, AttackResource.HitResult.MISS, "RESISTED")
+		return
+
+	# 2. Apply the mitigated health reduction
+	victim.stats.health -= final_amount
 	
-	# 3. Visual feedback
+	# 3. Show the number
+	_spawn_damage_number(final_amount, victim.global_position, type, AttackResource.HitResult.HIT)
+	
 	if victim.has_method("play_hit_flash"):
 		victim.play_hit_flash()
 	
-	# 4. Death check (since this happens at turn start)
 	if victim.stats.health <= 0:
 		_handle_unit_death(victim)
 
@@ -476,7 +483,6 @@ func _spawn_damage_number(value: int, pos: Vector2, type: Globals.DamageType, re
 		label.add_theme_constant_override("outline_size", 4)
 	
 	label.global_position = pos + Vector2(-10, -20) # Start closer to unit head
-	world.add_child(label)
 	
 	var tween = create_tween().set_parallel(true)
 	

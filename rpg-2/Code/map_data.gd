@@ -10,7 +10,6 @@ enum TerrainType { NORMAL = 0, WALL = 9, MUD = 1, WATER = 2 }
 @export var player_spawns: Dictionary[Vector2i, UnitData] = {} 
 @export var enemy_spawns: Dictionary[Vector2i, UnitData] = {}
 @export var object_spawns : Dictionary[Vector2i, ObjectData] = {}
-
 @export_group("Assets")
 @export var map_scene: PackedScene # The visual TileMap layout
 @export var unit_scene: PackedScene
