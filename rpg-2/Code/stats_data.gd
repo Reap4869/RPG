@@ -1,6 +1,8 @@
 extends Resource
 class_name Stats
 
+var active_buffs: Array = [] # Stores { "resource": BuffResource, "remaining": int }
+
 enum BuffableStats {
 	MAX_HEALTH,
 	ATTACK,
@@ -157,6 +159,36 @@ func recalculate_stats() -> void:
 	health = health
 	stamina = stamina
 	mana = mana
+
+func add_buff(buff_res: BuffResource, is_graze: bool = false):
+	var dur = buff_res.duration
+	if is_graze: dur = floori(dur / 2.0)
+	
+	# Check if buff already exists (Refresh duration)
+	for b in active_buffs:
+		if b.resource.buff_name == buff_res.buff_name:
+			b.remaining = max(b.remaining, dur)
+			return
+
+	active_buffs.append({ "resource": buff_res, "remaining": dur })
+
+func apply_turn_start_buffs(victim_unit: Node2D):
+	var to_remove = []
+	for b in active_buffs:
+		# 1. Deal Tick Damage
+		if b.resource.damage_per_tick > 0:
+			# Call back to game_node to handle damage/vfx
+			var game = victim_unit.get_parent() 
+			game._apply_tick_damage(victim_unit, b.resource.damage_per_tick, b.resource.damage_type)
+		
+		# 2. Reduce Duration
+		if not b.resource.is_permanent:
+			b.remaining -= 1
+			if b.remaining <= 0:
+				to_remove.append(b)
+				
+	for b in to_remove:
+		active_buffs.erase(b)
 
 func _apply_buff_logic() -> void:
 	var stat_multipliers: Dictionary = {}

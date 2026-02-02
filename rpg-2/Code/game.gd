@@ -439,15 +439,16 @@ func _setup_camera(map_resource: MapData) -> void:
 # --- MOVEMENT ---
 
 func _spawn_damage_number(value: int, pos: Vector2, type: Globals.DamageType, result: AttackResource.HitResult, text_override: String = "") -> void:
-	var dmg_num = DAMAGE_NUMBER_SCENE.instantiate()
+	var dmg_num = $UI.instantiate()
 	# Add to Game or UI layer
 	add_child(dmg_num) 
 	
-	# If text_override has content (like "RESISTED"), use it. 
-	# Otherwise, use the damage number.
+	# If we are using a simple Label inside the scene, we need to find it
+	var label = dmg_num.get_node("Label") # Make sure your scene has a Label node!
+	
 	var display_text = text_override if text_override != "" else str(value)
-	dmg_num.setup(display_text, pos, type, result)
 	# Setup styling
+	label.text = display_text
 	label.scale = Vector2(2.0, 2.0)
 	# 2. Outline (This makes it readable on any background)
 	label.add_theme_constant_override("outline_size", 4) # Thickness of the outline
@@ -455,14 +456,14 @@ func _spawn_damage_number(value: int, pos: Vector2, type: Globals.DamageType, re
 	
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.z_index = 100 
-	label.modulate = Globals.DAMAGE_COLORS.get(damage_type, Color.WHITE)
+	label.modulate = Globals.DAMAGE_COLORS.get(type, Color.WHITE)
 	
 	# If it's a CRIT, make it bigger!
 	if result == AttackResource.HitResult.CRIT:
 		label.scale = Vector2(3.0, 3.0)
 		label.add_theme_constant_override("outline_size", 4)
 	
-	label.global_position = position + Vector2(-10, -20) # Start closer to unit head
+	dmg_num.global_position = pos + Vector2(-10, -20) # Start closer to unit head
 	world.add_child(label)
 	
 	var tween = create_tween().set_parallel(true)
@@ -624,6 +625,14 @@ func _get_aoe_tiles(center: Vector2i, aoe_range: int, shape: Globals.AreaShape) 
 	return affected_tiles
 
 # --- TURNS ---
+
+func _start_unit_turn(unit: Unit):
+	unit.stats.apply_turn_start_buffs(unit)
+	# Check if tick damage killed the unit!
+	if unit.stats.health <= 0:
+		_handle_unit_death(unit)
+		_advance_turn() # Skip to next unit
+		return
 
 func _on_end_turn_button_pressed() -> void:
 	if Globals.current_state == Globals.TurnState.PLAYER_TURN:
