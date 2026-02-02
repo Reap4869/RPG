@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://dbgtqpkonro6p"]
+
+[ext_resource type="Script" uid="uid://0w0l012dkt4l" path="res://Code/unit.gd" id="1_btf8p"]
+[ext_resource type="Texture2D" uid="uid://1k63byfw7ewi" path="res://Art/RPG_SpriteSheet.png" id="2_jbou1"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_jbou1"]
+resource_local_to_scene = true
+
+[node name="Unit" type="Node2D" unique_id=2013316549]
+script = ExtResource("1_btf8p")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=40412350]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1380107001]
+shape = SubResource("RectangleShape2D_jbou1")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1503509444]
+texture = ExtResource("2_jbou1")
+region_enabled = true
+region_rect = Rect2(32, 0, 32, 32)

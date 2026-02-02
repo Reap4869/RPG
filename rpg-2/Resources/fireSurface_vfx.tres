@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="VisualEffectData" load_steps=3 format=3 uid="uid://cty1yryuaa712"]
+
+[ext_resource type="PackedScene" uid="uid://dt1iaeabtxq81" path="res://Scene/FireSurfaceVFX.tscn" id="1_tje2h"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="1_vcile"]
+
+[resource]
+script = ExtResource("1_vcile")
+effect_name = "FireSurface"
+effect_scene = ExtResource("1_tje2h")
+duration_type = 1
+turns_to_last = 3
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

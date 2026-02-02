@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="UnitData" format=3 uid="uid://do6jnwquvwknn"]
+
+[ext_resource type="Resource" uid="uid://du2sjsic4vewo" path="res://Resources/Slimes/Slime_Stats.tres" id="1_odprw"]
+[ext_resource type="Resource" uid="uid://cdtqcevwqes8r" path="res://Resources/Slimes/Slime_Ai.tres" id="1_qhuj8"]
+[ext_resource type="Script" uid="uid://caug8a8g82wya" path="res://Code/unit_data.gd" id="1_ssctv"]
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="2_3raq8"]
+[ext_resource type="Resource" uid="uid://ip56bamlye1p" path="res://Resources/Attacks/Physical/Attack_BodySlam.tres" id="2_qhuj8"]
+[ext_resource type="Texture2D" uid="uid://1k63byfw7ewi" path="res://Art/RPG_SpriteSheet.png" id="4_8m44a"]
+
+[resource]
+script = ExtResource("1_ssctv")
+sprite_sheet = ExtResource("4_8m44a")
+ai_behavior = ExtResource("1_qhuj8")
+world_region = Rect2(32, 96, 32, 32)
+portrait_region = Rect2(32, 96, 32, 32)
+base_stats = ExtResource("1_odprw")
+attacks = Array[ExtResource("2_3raq8")]([ExtResource("2_qhuj8")])
+metadata/_custom_type_script = "uid://caug8a8g82wya"

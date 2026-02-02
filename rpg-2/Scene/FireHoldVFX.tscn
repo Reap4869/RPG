@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://cxrtsjs5yk4et"]
+
+[ext_resource type="Texture2D" uid="uid://dqqmag7m8q2ta" path="res://Art/Retro Impact Effect Pack 4 A.png" id="1_bdkqs"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cn5xg"]
+atlas = ExtResource("1_bdkqs")
+region = Rect2(0, 864, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_25r4k"]
+atlas = ExtResource("1_bdkqs")
+region = Rect2(32, 864, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ehes1"]
+atlas = ExtResource("1_bdkqs")
+region = Rect2(64, 864, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_n5f57"]
+atlas = ExtResource("1_bdkqs")
+region = Rect2(96, 864, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_myd3s"]
+atlas = ExtResource("1_bdkqs")
+region = Rect2(128, 864, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_2jfrf"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cn5xg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_25r4k")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ehes1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_n5f57")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_myd3s")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="ExplosionVfx" type="AnimatedSprite2D" unique_id=1686693802]
+sprite_frames = SubResource("SpriteFrames_2jfrf")
+frame_progress = 0.41625568

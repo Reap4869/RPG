@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="UnitData" format=3 uid="uid://c3vxexx8tweyv"]
+
+[ext_resource type="Resource" uid="uid://cdtqcevwqes8r" path="res://Resources/Slimes/Slime_Ai.tres" id="1_enpfc"]
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="2_5fk4v"]
+[ext_resource type="Resource" uid="uid://ip56bamlye1p" path="res://Resources/Attacks/Physical/Attack_BodySlam.tres" id="3_y7yno"]
+[ext_resource type="Resource" uid="uid://b73yaedct8wuh" path="res://Resources/Attacks/Fire/Attack_Firebolt.tres" id="4_5fk4v"]
+[ext_resource type="Script" uid="uid://caug8a8g82wya" path="res://Code/unit_data.gd" id="5_hipp0"]
+[ext_resource type="Resource" uid="uid://dhh4fbs8irm88" path="res://Resources/Slimes/FireSlime_Stats.tres" id="5_y7yno"]
+[ext_resource type="Texture2D" uid="uid://1k63byfw7ewi" path="res://Art/RPG_SpriteSheet.png" id="6_x03uo"]
+
+[resource]
+script = ExtResource("5_hipp0")
+sprite_sheet = ExtResource("6_x03uo")
+ai_behavior = ExtResource("1_enpfc")
+world_region = Rect2(0, 96, 32, 32)
+portrait_region = Rect2(0, 96, 32, 32)
+base_stats = ExtResource("5_y7yno")
+attacks = Array[ExtResource("2_5fk4v")]([ExtResource("3_y7yno"), ExtResource("4_5fk4v")])
+metadata/_custom_type_script = "uid://caug8a8g82wya"

@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://dlocfpdljrm4j"]
+
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="1_32g44"]
+
+[resource]
+script = ExtResource("1_32g44")
+attack_name = "Ice Shard"
+attack_desc = "Ice Spell"
+animation_name = null
+mana_cost = 20.0
+stamina_cost = 30.0
+health_cost = null
+attack_range = 3
+target_type = null
+scaling_stat = 1
+multiplier = 1.5
+damage_type = 3
+dice_type = 6
+dice_count = 3
+crit_chance_bonus = null
+crit_multiplier_bonus = null
+accuracy_bonus = null
+graze_chance_bonus = null
+graze_multiplier_bonus = null
+surface_to_create = 2
+surface_duration = null
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://c5xgymxc8bm85"]
+
+[ext_resource type="Script" uid="uid://dibyd0yxywbdj" path="res://Code/spawn_marker.gd" id="1_8dtbo"]
+
+[node name="SpawnMarker" type="Node2D" unique_id=836848771]
+script = ExtResource("1_8dtbo")
+
+[node name="PreviewSprite" type="Sprite2D" parent="." unique_id=215203563]

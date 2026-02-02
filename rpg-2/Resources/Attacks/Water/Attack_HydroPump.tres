@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://b2b57e8w5pcog"]
+
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="1_me3h1"]
+
+[resource]
+script = ExtResource("1_me3h1")
+attack_name = "Hydro Pump"
+attack_desc = "Big Splash"
+mana_cost = 30.0
+stamina_cost = 60.0
+attack_range = 3
+scaling_stat = 1
+damage_type = 3
+dice_type = 6
+dice_count = 4
+surface_to_create = 2
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://u4p33kae4q55"]
+
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="1_pprh4"]
+
+[resource]
+script = ExtResource("1_pprh4")
+attack_name = "Kick"
+attack_desc = "Strong Kick"
+stamina_cost = 60.0
+dice_type = 6
+dice_count = 4
+surface_to_create = 0
+surface_duration = 0
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

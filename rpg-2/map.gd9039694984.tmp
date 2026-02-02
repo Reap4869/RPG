@@ -1,0 +1,94 @@
+class_name TestMap
+extends Node2D
+
+@export var cell_size := Vector2i(16, 16)
+
+var astar := AStarGrid2D.new()
+
+@onready var ground: TileMapLayer = $Ground
+@onready var obstacles: TileMapLayer = $Obstacles
+
+
+func _ready() -> void:
+	add_to_group("Map")
+	_setup_astar()
+	print("AStar ready. Size:", astar.size)
+
+
+func _setup_astar() -> void:
+	var used := ground.get_used_rect()
+
+	astar.cell_size = cell_size
+	astar.region = used
+	astar.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_NEVER
+	astar.default_compute_heuristic = AStarGrid2D.HEURISTIC_MANHATTAN
+	astar.default_estimate_heuristic = AStarGrid2D.HEURISTIC_MANHATTAN
+	astar.update()
+
+	for cell in obstacles.get_used_cells():
+		astar.set_point_solid(cell)
+
+	print("AStar obstacles:", obstacles.get_used_cells().size())
+
+
+func request_move(unit: Unit, target_world_pos: Vector2) -> void:
+	var start_cell := _world_to_cell(unit.global_position)
+	var end_cell := _world_to_cell(target_world_pos)
+
+	end_cell = _clamp_cell(end_cell)
+
+	var grid_path := astar.get_id_path(start_cell, end_cell)
+
+	if grid_path.is_empty():
+		print("No path found for", unit.name)
+		return
+
+	var world_path := PackedVector2Array()
+	for cell in grid_path:
+		world_path.append(_cell_to_world(cell))
+
+	unit.follow_path(world_path)
+
+
+func _world_to_cell(world_pos: Vector2) -> Vector2i:
+	return ground.local_to_map(ground.to_local(world_pos))
+
+
+func _cell_to_world(cell: Vector2i) -> Vector2:
+	return ground.map_to_local(cell) + Vector2(cell_size) * 0.5
+
+
+func _clamp_cell(cell: Vector2i) -> Vector2i:
+	cell.x = clamp(cell.x,
+		astar.region.position.x,
+		astar.region.position.x + astar.region.size.x - 1)
+
+	cell.y = clamp(cell.y,
+		astar.region.position.y,
+		astar.region.position.y + astar.region.size.y - 1)
+
+	return cell
+
+func _process(_delta: float) -> void:
+	# Always redraw if debug is enabled
+	if GlobalDebugSettings.show_cell_outlines:
+		queue_redraw()
+
+func _draw() -> void:
+	if not GlobalDebugSettings.show_cell_outlines:
+		return
+
+	var region = astar.region
+
+	# Draw grid
+	for x in range(region.position.x, region.position.x + region.size.x):
+		for y in range(region.position.y, region.position.y + region.size.y):
+			var cell = Vector2i(x, y)
+			if not astar.is_point_solid(cell):
+				var rect = Rect2(_cell_to_world(cell) - Vector2(cell_size), Vector2(cell_size))
+				draw_rect(rect, Color(0, 1, 1, 0.3), false, 1.0)  # Cyan for empty cells
+
+	# Draw obstacles
+	for cell in obstacles.get_used_cells():
+		var rect = Rect2(_cell_to_world(cell) - Vector2(cell_size), Vector2(cell_size))
+		draw_rect(rect, Color.RED, false, 1.5)  # Red for obstacles

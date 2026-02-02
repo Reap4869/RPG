@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://ctb7r7g3ol24v"]
+
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="1_op7jh"]
+
+[resource]
+script = ExtResource("1_op7jh")
+attack_name = "Jab"
+attack_desc = "Fast Punch"
+multiplier = 1.0
+dice_type = 6
+dice_count = 2
+surface_to_create = 0
+surface_duration = 0
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

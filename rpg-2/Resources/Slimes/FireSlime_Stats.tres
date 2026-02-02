@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="Stats" format=3 uid="uid://dhh4fbs8irm88"]
+
+[ext_resource type="Script" uid="uid://cbjkyqk7ij6cq" path="res://Code/stats_data.gd" id="1_qsvji"]
+
+[resource]
+script = ExtResource("1_qsvji")
+character_name = "Fire Slime"
+race = "Monster"
+base_strength = 2.0
+base_agility = 2.0
+base_intelligence = 2.0
+resistances = Dictionary[int, float]({
+1: 0.0,
+2: 0.5,
+3: -0.5,
+4: 0.0,
+5: 0.0
+})
+metadata/_custom_type_script = "uid://cbjkyqk7ij6cq"

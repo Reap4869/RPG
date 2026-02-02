@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://pc6usvw46jfj"]
+
+[ext_resource type="Script" uid="uid://djbtfpdb503bm" path="res://Code/vfx.gd" id="1_0i1ai"]
+
+[node name="WorldVfx" type="Node2D" unique_id=418050464]
+script = ExtResource("1_0i1ai")

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://c4u18wcu3rue0"]
+
+[ext_resource type="PackedScene" uid="uid://cxeour2r826xs" path="res://Scene/FireTargetCastVFX.tscn" id="1_0iy8o"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="1_os4ra"]
+
+[resource]
+script = ExtResource("1_os4ra")
+effect_scene = ExtResource("1_0iy8o")
+duration_type = 3
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

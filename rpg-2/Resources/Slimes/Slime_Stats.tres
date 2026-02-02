@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Stats" format=3 uid="uid://du2sjsic4vewo"]
+
+[ext_resource type="Script" uid="uid://cbjkyqk7ij6cq" path="res://Code/stats_data.gd" id="1_37ui6"]
+
+[resource]
+script = ExtResource("1_37ui6")
+character_name = "Slime"
+race = "Monster"
+base_strength = 2.0
+base_agility = 2.0
+base_intelligence = 2.0
+metadata/_custom_type_script = "uid://cbjkyqk7ij6cq"

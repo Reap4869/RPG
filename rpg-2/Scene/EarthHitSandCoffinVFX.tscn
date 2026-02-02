@@ -1,0 +1,80 @@
+[gd_scene format=3 uid="uid://b0kb5vtojhxks"]
+
+[ext_resource type="Texture2D" uid="uid://cxljmgkvo1va" path="res://Art/EarthCoffin.png" id="1_7ickn"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vpmd1"]
+atlas = ExtResource("1_7ickn")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jneh8"]
+atlas = ExtResource("1_7ickn")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cb6te"]
+atlas = ExtResource("1_7ickn")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dxx48"]
+atlas = ExtResource("1_7ickn")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1wrdt"]
+atlas = ExtResource("1_7ickn")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ikges"]
+atlas = ExtResource("1_7ickn")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xn6g0"]
+atlas = ExtResource("1_7ickn")
+region = Rect2(32, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_os1a7"]
+atlas = ExtResource("1_7ickn")
+region = Rect2(64, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xloid"]
+atlas = ExtResource("1_7ickn")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_2jfrf"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vpmd1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jneh8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cb6te")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dxx48")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1wrdt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ikges")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xn6g0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_os1a7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xloid")
+}],
+"loop": false,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="ExplosionVfx" type="AnimatedSprite2D" unique_id=1686693802]
+sprite_frames = SubResource("SpriteFrames_2jfrf")
+frame = 8
+frame_progress = 1.0
+speed_scale = 3.0

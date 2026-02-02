@@ -1,0 +1,27 @@
+[gd_scene load_steps=6 format=3 uid="uid://c4y7t7u0w3yfl"]
+
+[ext_resource type="PackedScene" uid="uid://cdq7vqhovmx06" path="res://test_map.tscn" id="1_80nbo"]
+[ext_resource type="Script" uid="uid://ca8il1uokl2si" path="res://gameboard.gd" id="2_7jktm"]
+[ext_resource type="PackedScene" uid="uid://dxwqcmesarwax" path="res://MainUI.tscn" id="2_e2o6t"]
+[ext_resource type="Script" uid="uid://b6jmsnfng7b87" path="res://camera.gd" id="2_feb5d"]
+[ext_resource type="PackedScene" uid="uid://dbgtqpkonro6p" path="res://unit.tscn" id="3_fc0e3"]
+
+[node name="Game" type="Node2D"]
+
+[node name="Camera" type="Camera2D" parent="."]
+script = ExtResource("2_feb5d")
+
+[node name="Gameboard" type="Node2D" parent="."]
+script = ExtResource("2_7jktm")
+
+[node name="TestMap" parent="Gameboard" instance=ExtResource("1_80nbo")]
+
+[node name="Units" type="Node2D" parent="Gameboard"]
+
+[node name="Unit" parent="Gameboard/Units" groups=["Units"] instance=ExtResource("3_fc0e3")]
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="MainUI" parent="UI" instance=ExtResource("2_e2o6t")]
+
+[editable path="UI/MainUI"]

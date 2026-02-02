@@ -1,0 +1,72 @@
+[gd_scene format=3 uid="uid://dbbf6kisrcgc0"]
+
+[ext_resource type="Texture2D" uid="uid://dqqmag7m8q2ta" path="res://Art/Retro Impact Effect Pack 4 A.png" id="1_tdmek"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fxklu"]
+atlas = ExtResource("1_tdmek")
+region = Rect2(0, 576, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_c7eln"]
+atlas = ExtResource("1_tdmek")
+region = Rect2(32, 608, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g0yuu"]
+atlas = ExtResource("1_tdmek")
+region = Rect2(64, 576, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r4slu"]
+atlas = ExtResource("1_tdmek")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7utjo"]
+atlas = ExtResource("1_tdmek")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0xdwn"]
+atlas = ExtResource("1_tdmek")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2jfrf"]
+atlas = ExtResource("1_tdmek")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_remht"]
+atlas = ExtResource("1_tdmek")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_2jfrf"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fxklu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_c7eln")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g0yuu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r4slu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7utjo")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0xdwn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2jfrf")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_remht")
+}],
+"loop": false,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="ExplosionVfx" type="AnimatedSprite2D" unique_id=1686693802]
+sprite_frames = SubResource("SpriteFrames_2jfrf")
+frame = 7
+frame_progress = 1.0

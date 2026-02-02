@@ -1,0 +1,108 @@
+[gd_scene load_steps=10 format=3 uid="uid://c7psq6n70mwkm"]
+
+[ext_resource type="Script" path="res://Code/new_game.gd" id="1_hi4id"]
+[ext_resource type="PackedScene" uid="uid://c4y7t7u0w3yfl" path="res://Scene/game.tscn" id="2_p8qqq"]
+[ext_resource type="AudioStream" uid="uid://bfwqboqxvccp" path="res://Sound/ニューゲーム.mp3" id="3_b3guk"]
+[ext_resource type="Script" path="res://Code/load_game.gd" id="4_6wrex"]
+[ext_resource type="AudioStream" uid="uid://d12llcwvdxk15" path="res://Sound/ロード.mp3" id="5_pjxj7"]
+[ext_resource type="Script" path="res://Code/options.gd" id="6_y05ef"]
+[ext_resource type="AudioStream" uid="uid://cntq4bks3c3tj" path="res://Sound/オプション.mp3" id="7_46t81"]
+[ext_resource type="Script" path="res://Code/exit.gd" id="8_43jot"]
+[ext_resource type="AudioStream" uid="uid://c4krekc6i6fiw" path="res://Sound/エグジット.mp3" id="9_i55oa"]
+
+[node name="Start Screen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BoxContainer" type="BoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -9.0
+offset_top = -31.0
+offset_right = 9.0
+offset_bottom = 31.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BoxContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="BoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Game Name" type="Label" parent="BoxContainer/VBoxContainer/VBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "RPG"
+horizontal_alignment = 1
+
+[node name="New Game" type="Button" parent="BoxContainer/VBoxContainer/VBoxContainer2"]
+layout_mode = 2
+script = ExtResource("1_hi4id")
+normal_text = "ニューゲーム"
+hover_text = "New game"
+game_scene = ExtResource("2_p8qqq")
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="BoxContainer/VBoxContainer/VBoxContainer2/New Game"]
+stream = ExtResource("3_b3guk")
+
+[node name="Load Game" type="Button" parent="BoxContainer/VBoxContainer/VBoxContainer2"]
+layout_mode = 2
+script = ExtResource("4_6wrex")
+normal_text = "ロード"
+hover_text = "Load Game"
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="BoxContainer/VBoxContainer/VBoxContainer2/Load Game"]
+stream = ExtResource("5_pjxj7")
+
+[node name="Options" type="Button" parent="BoxContainer/VBoxContainer/VBoxContainer2"]
+layout_mode = 2
+script = ExtResource("6_y05ef")
+normal_text = "オプション"
+hover_text = "Options"
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="BoxContainer/VBoxContainer/VBoxContainer2/Options"]
+stream = ExtResource("7_46t81")
+
+[node name="Exit" type="Button" parent="BoxContainer/VBoxContainer/VBoxContainer2"]
+layout_mode = 2
+script = ExtResource("8_43jot")
+normal_text = "エグジット"
+hover_text = "Exit"
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="BoxContainer/VBoxContainer/VBoxContainer2/Exit"]
+stream = ExtResource("9_i55oa")
+
+[node name="BoxContainer2" type="BoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -14.0
+offset_right = 330.0
+grow_vertical = 0
+
+[node name="Text" type="Label" parent="BoxContainer2"]
+layout_mode = 2
+text = "Press Space to Read Outloud - Hold Control to Translate"
+
+[connection signal="mouse_entered" from="BoxContainer/VBoxContainer/VBoxContainer2/New Game" to="BoxContainer/VBoxContainer/VBoxContainer2/New Game" method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="BoxContainer/VBoxContainer/VBoxContainer2/New Game" to="BoxContainer/VBoxContainer/VBoxContainer2/New Game" method="_on_mouse_exited"]
+[connection signal="pressed" from="BoxContainer/VBoxContainer/VBoxContainer2/New Game" to="BoxContainer/VBoxContainer/VBoxContainer2/New Game" method="_on_pressed"]
+[connection signal="mouse_entered" from="BoxContainer/VBoxContainer/VBoxContainer2/Load Game" to="BoxContainer/VBoxContainer/VBoxContainer2/Load Game" method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="BoxContainer/VBoxContainer/VBoxContainer2/Load Game" to="BoxContainer/VBoxContainer/VBoxContainer2/Load Game" method="_on_mouse_exited"]
+[connection signal="pressed" from="BoxContainer/VBoxContainer/VBoxContainer2/Load Game" to="BoxContainer/VBoxContainer/VBoxContainer2/Load Game" method="_on_pressed"]
+[connection signal="mouse_entered" from="BoxContainer/VBoxContainer/VBoxContainer2/Options" to="BoxContainer/VBoxContainer/VBoxContainer2/Options" method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="BoxContainer/VBoxContainer/VBoxContainer2/Options" to="BoxContainer/VBoxContainer/VBoxContainer2/Options" method="_on_mouse_exited"]
+[connection signal="pressed" from="BoxContainer/VBoxContainer/VBoxContainer2/Options" to="BoxContainer/VBoxContainer/VBoxContainer2/Options" method="_on_pressed"]
+[connection signal="mouse_entered" from="BoxContainer/VBoxContainer/VBoxContainer2/Exit" to="BoxContainer/VBoxContainer/VBoxContainer2/Exit" method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="BoxContainer/VBoxContainer/VBoxContainer2/Exit" to="BoxContainer/VBoxContainer/VBoxContainer2/Exit" method="_on_mouse_exited"]
+[connection signal="pressed" from="BoxContainer/VBoxContainer/VBoxContainer2/Exit" to="BoxContainer/VBoxContainer/VBoxContainer2/Exit" method="_on_pressed"]

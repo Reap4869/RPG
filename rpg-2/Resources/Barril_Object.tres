@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ObjectData" format=3 uid="uid://cwaptxtb8n32r"]
+
+[ext_resource type="Script" uid="uid://b4crm2pqoycfw" path="res://Code/object_data.gd" id="1_i71ah"]
+[ext_resource type="Texture2D" uid="uid://b0wi2h5v1ijue" path="res://Art/DungeonObjects.png" id="2_ao7kl"]
+[ext_resource type="Resource" uid="uid://dpe0pickv450x" path="res://Resources/Object_Stats.tres" id="3_ao7kl"]
+
+[resource]
+script = ExtResource("1_i71ah")
+object_name = "Barril"
+sprite_texture = ExtResource("2_ao7kl")
+world_region = Rect2(96, 64, 16, 32)
+stats = ExtResource("3_ao7kl")
+metadata/_custom_type_script = "uid://b4crm2pqoycfw"

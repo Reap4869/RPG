@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="SlimeAI" load_steps=2 format=3 uid="uid://cdtqcevwqes8r"]
+
+[ext_resource type="Script" uid="uid://diotl73qheqwt" path="res://Code/slime_ai.gd" id="1_exwy8"]
+
+[resource]
+script = ExtResource("1_exwy8")
+metadata/_custom_type_script = "uid://diotl73qheqwt"

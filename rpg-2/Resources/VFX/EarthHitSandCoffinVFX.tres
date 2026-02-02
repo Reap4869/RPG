@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://ceu85jsfm2geg"]
+
+[ext_resource type="PackedScene" uid="uid://b0kb5vtojhxks" path="res://Scene/EarthHitSandCoffinVFX.tscn" id="1_7ipol"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="1_ri4wo"]
+
+[resource]
+script = ExtResource("1_ri4wo")
+effect_scene = ExtResource("1_7ipol")
+visual_scale = 2.0
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

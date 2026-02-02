@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="UnitData" format=3 uid="uid://c7u3ljbe5bf1"]
+
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="1_6qyk3"]
+[ext_resource type="Resource" uid="uid://b73yaedct8wuh" path="res://Resources/Attacks/Fire/Attack_Firebolt.tres" id="2_j2rxv"]
+[ext_resource type="Resource" uid="uid://o3im1p02rm5r" path="res://Resources/Attacks/Fire/Attack_Fireball.tres" id="3_qpk7s"]
+[ext_resource type="Resource" uid="uid://bbv7edbq72mk7" path="res://Resources/Attacks/Fire/Attack_Explosion.tres" id="4_l7qve"]
+[ext_resource type="Resource" uid="uid://lsg6ty0g66e6" path="res://Resources/Attacks/Earth/Attack_SandCoffin.tres" id="5_x2e04"]
+[ext_resource type="Resource" uid="uid://detwxx1vx2tvq" path="res://Resources/Player_Stats.tres" id="6_ofl5i"]
+[ext_resource type="Script" uid="uid://caug8a8g82wya" path="res://Code/unit_data.gd" id="7_ji38f"]
+[ext_resource type="Texture2D" uid="uid://1k63byfw7ewi" path="res://Art/RPG_SpriteSheet.png" id="8_8bn8v"]
+
+[resource]
+script = ExtResource("7_ji38f")
+sprite_sheet = ExtResource("8_8bn8v")
+is_player_controlled = true
+world_region = Rect2(64, 32, 32, 48)
+portrait_region = Rect2(0, 0, 32, 32)
+sprite_offset = Vector2(0, -10)
+base_stats = ExtResource("6_ofl5i")
+attacks = Array[ExtResource("1_6qyk3")]([ExtResource("2_j2rxv"), ExtResource("3_qpk7s"), ExtResource("4_l7qve"), ExtResource("5_x2e04")])
+metadata/_custom_type_script = "uid://caug8a8g82wya"

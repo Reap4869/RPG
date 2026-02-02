@@ -1,0 +1,39 @@
+[gd_scene load_steps=7 format=3 uid="uid://c4y7t7u0w3yfl"]
+
+[ext_resource type="PackedScene" uid="uid://cdq7vqhovmx06" path="res://test_map.tscn" id="1_80nbo"]
+[ext_resource type="Script" uid="uid://t3fd6ta2cr0d" path="res://game.gd" id="1_ryrav"]
+[ext_resource type="Script" uid="uid://ca8il1uokl2si" path="res://world.gd" id="2_7jktm"]
+[ext_resource type="PackedScene" uid="uid://dxwqcmesarwax" path="res://CombatUI.tscn" id="2_e2o6t"]
+[ext_resource type="Script" uid="uid://b6jmsnfng7b87" path="res://camera.gd" id="2_feb5d"]
+[ext_resource type="PackedScene" uid="uid://dbgtqpkonro6p" path="res://unit.tscn" id="3_fc0e3"]
+
+[node name="Game" type="Node2D"]
+script = ExtResource("1_ryrav")
+
+[node name="Camera" type="Camera2D" parent="." node_paths=PackedStringArray("selection_panel")]
+script = ExtResource("2_feb5d")
+selection_panel = NodePath("../UI/CombatUI/Panel")
+
+[node name="World" type="Node2D" parent="."]
+script = ExtResource("2_7jktm")
+
+[node name="TestMap" parent="World" instance=ExtResource("1_80nbo")]
+
+[node name="Units" type="Node2D" parent="World"]
+
+[node name="Unit" parent="World/Units" groups=["Units"] instance=ExtResource("3_fc0e3")]
+position = Vector2(25, 45)
+
+[node name="Unit2" parent="World/Units" groups=["Units"] instance=ExtResource("3_fc0e3")]
+position = Vector2(87, 53)
+
+[node name="Cursor" type="Node2D" parent="."]
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="CombatUI" parent="UI" instance=ExtResource("2_e2o6t")]
+
+[node name="Unit" parent="." groups=["Unit"] instance=ExtResource("3_fc0e3")]
+position = Vector2(25, 45)
+
+[editable path="UI/CombatUI"]

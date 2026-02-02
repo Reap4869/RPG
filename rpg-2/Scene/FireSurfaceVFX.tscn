@@ -1,0 +1,57 @@
+[gd_scene load_steps=9 format=3 uid="uid://dt1iaeabtxq81"]
+
+[ext_resource type="Texture2D" uid="uid://s2fl2x7c8685" path="res://Art/VFX/FireSurface2.png" id="1_t1rkg"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0r1rp"]
+atlas = ExtResource("1_t1rkg")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gj13a"]
+atlas = ExtResource("1_t1rkg")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pkqch"]
+atlas = ExtResource("1_t1rkg")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_up0mu"]
+atlas = ExtResource("1_t1rkg")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7fokq"]
+atlas = ExtResource("1_t1rkg")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_41tre"]
+atlas = ExtResource("1_t1rkg")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_2jfrf"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0r1rp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gj13a")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pkqch")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_up0mu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7fokq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_41tre")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="ExplosionVfx" type="AnimatedSprite2D"]
+sprite_frames = SubResource("SpriteFrames_2jfrf")
+frame_progress = 0.2321172

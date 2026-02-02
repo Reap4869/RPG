@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://pmquml0t77fa"]
+
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="1_wx0pr"]
+
+[resource]
+script = ExtResource("1_wx0pr")
+attack_name = "Hook"
+attack_desc = "Strong Punch"
+stamina_cost = 30.0
+multiplier = 1.5
+dice_type = 6
+dice_count = 3
+surface_to_create = 0
+surface_duration = 0
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

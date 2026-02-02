@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://bbv7edbq72mk7"]
+
+[ext_resource type="Resource" uid="uid://cdu844ijx72qd" path="res://Resources/explosion_vfx.tres" id="1_0qera"]
+[ext_resource type="AudioStream" uid="uid://cxeycaqojtrjn" path="res://Sound/SFX/Fire/CastExplosion2.mp3" id="1_7glws"]
+[ext_resource type="Resource" uid="uid://c4u18wcu3rue0" path="res://Resources/VFX/fireCast_VFX.tres" id="2_7rc8w"]
+[ext_resource type="AudioStream" uid="uid://bpljvo58jis05" path="res://Sound/SFX/Fire/HitExplosion.mp3" id="2_8y2ls"]
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="2_n8b57"]
+[ext_resource type="AudioStream" uid="uid://cckqh5av5h0sx" path="res://Sound/SFX/Fire/ProjectileExplosion2.mp3" id="3_7glws"]
+[ext_resource type="Resource" uid="uid://c6a6tew18qv7w" path="res://Resources/VFX/FireHoldVFX.tres" id="3_7rc8w"]
+[ext_resource type="Resource" uid="uid://cty1yryuaa712" path="res://Resources/fireSurface_vfx.tres" id="3_jax8g"]
+
+[resource]
+script = ExtResource("2_n8b57")
+attack_name = "Explosion"
+attack_desc = "Explooooshion"
+stamina_cost = 0.0
+damage_type = 2
+scaling_stat = 1
+dice_count = 4
+target_type = 1
+attack_range = 5
+aoe_shape = 1
+aoe_range = 5
+hold_vfx = ExtResource("3_7rc8w")
+target_cast_vfx = ExtResource("2_7rc8w")
+impact_vfx = ExtResource("1_0qera")
+surface_vfx = ExtResource("3_jax8g")
+hold_sfx = ExtResource("3_7glws")
+casting_sfx = ExtResource("1_7glws")
+impact_sfx = ExtResource("2_8y2ls")
+use_screen_flash = true
+screen_shake_type = 3
+screen_freeze_type = 3
+screen_zoom_type = 1
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

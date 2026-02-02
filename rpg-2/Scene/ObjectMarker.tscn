@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://b4b3ax2tc1ud2"]
+
+[ext_resource type="Script" uid="uid://c27qjnkhur470" path="res://Scene/object_marker.gd" id="1_ft2tq"]
+
+[node name="SpawnMarker" type="Node2D" unique_id=836848771]
+script = ExtResource("1_ft2tq")
+
+[node name="PreviewSprite" type="Sprite2D" parent="." unique_id=215203563]
+scale = Vector2(0.2, 0.2)

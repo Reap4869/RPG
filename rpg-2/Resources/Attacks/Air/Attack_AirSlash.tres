@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://bxk8ufpfempbr"]
+
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="1_f177f"]
+
+[resource]
+script = ExtResource("1_f177f")
+attack_name = "Air Slash"
+attack_desc = "Slash of Air"
+mana_cost = 20.0
+stamina_cost = 30.0
+attack_range = 3
+scaling_stat = 1
+multiplier = 1.5
+damage_type = 5
+dice_type = 6
+dice_count = 3
+surface_to_create = 0
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"
