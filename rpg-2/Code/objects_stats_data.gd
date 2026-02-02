@@ -20,10 +20,10 @@ signal health_depleted
 @export var base_graze_multiplier: float = 0.5 # 50% damage
 
 @export_group("Spell Attributes")
-@export var base_spell_accuracy: float = 90.0
-@export var base_spell_evasion: float = 10.0
+@export var base_spell_accuracy: float = 100.0
+@export var base_spell_resistance: float = 10.0 # This is the "Evasion" for spells
 @export var base_spell_graze_chance: float = 40.0
-@export var spell_resistance_chance: float = 10.0 # The 10% base resist
+@export var base_spell_graze_multiplier: float = 0.5
 
 @export_group("Resistances")
 @export var resistances: Dictionary[Globals.DamageType, float] = {
@@ -46,6 +46,11 @@ var current_accuracy: float = base_accuracy
 var current_evasion: float = base_evasion
 var current_graze_chance: float = base_graze_chance
 var current_graze_multiplier: float
+
+var current_spell_accuracy: float = base_spell_accuracy
+var current_spell_resistance: float = base_spell_resistance
+var current_spell_graze_chance: float = base_spell_graze_chance
+var current_spell_graze_multiplier: float = base_spell_graze_multiplier
 
 func setup_stats() -> void:
 	health = current_max_health

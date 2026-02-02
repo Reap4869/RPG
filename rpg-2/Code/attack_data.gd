@@ -68,84 +68,68 @@ enum HitResult { MISS, GRAZE, HIT, CRIT }
 @export var screen_zoom_type: Globals.ZoomType = Globals.ZoomType.NONE
 
 # This function handles the "How much damage?" logic
-func get_damage_data(attacker_stats: Stats, defender_stats: Resource) -> Array:
-	if category == Globals.AttackCategory.SPELL:
-		return _get_spell_result(attacker_stats, defender_stats)
+func get_damage_data(attacker_stats: Resource, defender_stats: Resource) -> Array:
 	var roll = randf() * 100.0
 	var result = HitResult.MISS
-	
-	# 1. CALCULATE THRESHOLDS (High is Good)
-	# Miss ceiling: If Acc=95 and Eva=5, miss is 100-95+5 = 10. Rolls 0-10 miss.
-	var miss_ceiling = (100.0 - attacker_stats.current_accuracy) + defender_stats.current_evasion - accuracy_bonus
-	
-	# Graze is the slice immediately above Miss. 
-	var total_graze_chance = attacker_stats.current_graze_chance + graze_chance_bonus
-	var graze_ceiling = miss_ceiling + total_graze_chance
-	
-	# Crit is the top slice (e.g., if crit chance is 10%, rolls 90-100 crit)
-	var total_crit_chance = attacker_stats.current_crit_chance + crit_chance_bonus
-	var crit_threshold = 100.0 - total_crit_chance
-
-	# 2. DETERMINE RESULT
-	if roll <= miss_ceiling:
-		result = HitResult.MISS
-	elif roll <= graze_ceiling:
-		result = HitResult.GRAZE
-	else:
-		result = HitResult.HIT
-		
-	if result == HitResult.HIT and roll >= crit_threshold:
-		result = HitResult.CRIT
-
-	# 3. DAMAGE CALCULATION
-	var stat_bonus = _get_scaling_bonus(attacker_stats)
-	var flat_damage = stat_bonus * multiplier
-	
-	var dice_roll = 0
-	var rolls_array = []
-	for i in range(dice_count):
-		var r = Globals.roll(dice_type)
-		dice_roll += r
-		rolls_array.append(str(r))
-	
-	var final_dice_damage = float(dice_roll)
 	var multiplier_used = 1.0
 	
-	match result:
-		HitResult.GRAZE:
-			multiplier_used = attacker_stats.current_graze_multiplier + graze_multiplier_bonus
-			final_dice_damage = dice_roll * multiplier_used
-			flat_damage *= multiplier_used
-		HitResult.CRIT:
-			multiplier_used = attacker_stats.current_crit_multiplier + crit_multiplier_bonus
-			final_dice_damage = dice_roll * multiplier_used
+	# --- 1. ACCURACY BRANCHING ---
+	if category == Globals.AttackCategory.SPELL:
+		# Spell Logic: Resist (10%) | Graze (40%) | Hit (50%)
+		var miss_ceiling = (100.0 - attacker_stats.current_spell_accuracy) + defender_stats.current_spell_resistance
+		var graze_ceiling = miss_ceiling + defender_stats.base_spell_graze_chance
+		
+		if roll <= miss_ceiling:
+			result = HitResult.MISS
+			multiplier_used = 0.0
+		elif roll <= graze_ceiling:
+			result = HitResult.GRAZE
+			multiplier_used = defender_stats.base_spell_graze_multiplier
+		else:
+			result = HitResult.HIT
+			multiplier_used = 1.0
+	else:
+		# Physical Logic (Your existing code)
+		var miss_ceiling = (100.0 - attacker_stats.current_accuracy) + defender_stats.current_evasion - accuracy_bonus
+		var total_graze_chance = attacker_stats.current_graze_chance + graze_chance_bonus
+		var graze_ceiling = miss_ceiling + total_graze_chance
+		var total_crit_chance = attacker_stats.current_crit_chance + crit_chance_bonus
+		var crit_threshold = 100.0 - total_crit_chance
 
+		if roll <= miss_ceiling:
+			result = HitResult.MISS
+			multiplier_used = 0.0
+		elif roll <= graze_ceiling:
+			result = HitResult.GRAZE
+			multiplier_used = attacker_stats.current_graze_multiplier + graze_multiplier_bonus
+		else:
+			result = HitResult.HIT
+			if roll >= crit_threshold:
+				result = HitResult.CRIT
+				multiplier_used = attacker_stats.current_crit_multiplier + crit_multiplier_bonus
+
+	# --- 2. SHARED DAMAGE FORMULA ---
+	# (Calculate raw damage using the multiplier we just found)
+	var stat_bonus = _get_scaling_bonus(attacker_stats)
+	var flat_damage = (stat_bonus * multiplier) * multiplier_used
+	
+	var dice_roll = 0
+	for i in range(dice_count):
+		dice_roll += Globals.roll(dice_type)
+	
+	var final_dice_damage = float(dice_roll) * multiplier_used
 	var total_pre_resist = flat_damage + final_dice_damage
 	
-	# 4. RESISTANCES
+	# Resistances (Fire, Water, etc. work exactly the same for Spells/Phys)
 	var resist_pct = defender_stats.resistances.get(damage_type, 0.0)
-	var damage_blocked = total_pre_resist * resist_pct
-	var final_damage = total_pre_resist - damage_blocked
+	var final_damage = total_pre_resist * (1.0 - resist_pct)
 
-	# --- CONSOLE DEBUG PRINT ---
-	print("\n--- ATTACK BY: %s ---" % attacker_stats.character_name)
-	print("RESULT: %s (Roll: %d | Miss: <%.0f, Graze: <%.0f, Crit: >%.0f)" % [
-		HitResult.keys()[result], roll, miss_ceiling, graze_ceiling, crit_threshold
-	])
-	
-	if result != HitResult.MISS:
-		var dice_str = " + ".join(rolls_array)
-		var mult_str = " (x%.1f %s)" % [multiplier_used, HitResult.keys()[result]] if multiplier_used != 1.0 else ""
-		print("MATH: (Dice: %s) %d + (Stat: %.0f) = %.1f total %s" % [
-			dice_str, dice_roll, stat_bonus * multiplier, total_pre_resist, mult_str
-		])
-		print("RESIST: %s (%d%%) blocked %.1f" % [
-			Globals.DamageType.keys()[damage_type], resist_pct * 100, damage_blocked
-		])
-		print("FINAL DMG: %d" % roundi(final_damage))
-	print("-----------------------\n")
-	
-	return [maxf(1.0, final_damage), result]
+	# --- 3. CONSOLE LOGGING (With "Resisted" Support) ---
+	var result_name = "RESISTED" if (result == HitResult.MISS and category == Globals.AttackCategory.SPELL) else HitResult.keys()[result]
+	print("[%s] Result: %s | Final Damage: %d" % [category, result_name, roundi(final_damage)])
+
+	return [maxf(0.0, final_damage), result]
+
 
 func _get_scaling_bonus(s: Stats) -> float:
 	match scaling_stat:
@@ -157,17 +141,24 @@ func _get_scaling_bonus(s: Stats) -> float:
 func _get_spell_result(attacker: Resource, defender: Resource) -> Array:
 	var roll = randf() * 100.0
 	
-	# 1. Check for flat Resistance (10% base)
-	var resist_chance = defender.spell_resistance_chance
-	if roll <= resist_chance:
-		return [0.0, HitResult.MISS] # Resisted!
+	# 1. CALCULATE THRESHOLDS
+	# Logic: If Acc is 100 and Resist is 10, miss_ceiling is 10.
+	# If Acc is 110 (Buffed), miss_ceiling becomes 0 (Can't miss).
+	var miss_ceiling = (100.0 - attacker.current_spell_accuracy) + defender.current_spell_resistance
+	var graze_ceiling = miss_ceiling + defender.base_spell_graze_chance
+	
+	var multiplier = 1.0
+	var result = HitResult.HIT
+	
+	# 2. DETERMINE RESULT
+	if roll <= miss_ceiling:
+		result = HitResult.MISS
+		multiplier = 0.0
+	elif roll <= graze_ceiling:
+		result = HitResult.GRAZE
+		multiplier = defender.base_spell_graze_multiplier
+	else:
+		result = HitResult.HIT
+		multiplier = 1.0
 		
-	# 2. Check for Graze (40% chance)
-	# Roll is now between 10 and 100. 
-	# If we want a 40% chance of the total, we check the next slice.
-	var graze_ceiling = resist_chance + defender.base_spell_graze_chance
-	if roll <= graze_ceiling:
-		return [0.5, HitResult.GRAZE] # Half effect
-		
-	# 3. Full Success (Remaining 50%)
-	return [1.0, HitResult.HIT]
+	return [multiplier, result]

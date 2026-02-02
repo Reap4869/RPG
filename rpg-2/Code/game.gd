@@ -291,57 +291,43 @@ func _apply_attack_damage(attack: AttackResource, attacker: Unit, victim: Node2D
 	var data = attack.get_damage_data(attacker.stats, victim.stats)
 	var damage = data[0]
 	var result = data[1]
-	var effect_multiplier = data[0] # 1.0, 0.5, or 0.0
+
+	# Handle the "Resisted" text override
+	var label_override = ""
+	if result == attack.HitResult.MISS and attack.category == Globals.AttackCategory.SPELL:
+		label_override = "RESISTED"
+
+	# 1. VFX & Damage Numbers (Always trigger these)
+	_spawn_damage_number(roundi(damage), victim.global_position, attack.damage_type, result, label_override)
 	
-	if attack.category == Globals.AttackCategory.SPELL:
-		if result == attack.HitResult.MISS:
-			_spawn_damage_number(0, victim.global_position, attack.damage_type, result, "RESISTED")
-		else:
-			_apply_spell_effect(attack, victim, effect_multiplier)
-	else:
-	
-		# NEW: Spawn the number here (Even for a MISS, we can show "MISS")
-		_spawn_damage_number(roundi(damage), victim.global_position, attack.damage_type, result)
-
-		if result == attack.HitResult.MISS:
-			_send_to_log("%s missed %s!" % [attacker.name, victim.name], Color.GRAY)
-			return
-
-		# Apply Health Change
-		# --- FIXED: Apply damage to Units OR Objects ---
-		if victim is Unit:
-			victim.stats.take_damage(damage)
-			victim.play_hit_flash()
-			if attack.buff_to_apply:
-				victim.stats.add_buff(attack.buff_to_apply)
-				
-		elif victim is WorldObject:
-			victim.stats.take_damage(damage)
-
-	# Combat Log
-	var type_color = Globals.DAMAGE_COLORS.get(attack.damage_type, Color.WHITE)
-	var prefix = ""
-	match result:
-		attack.HitResult.GRAZE: prefix = "GRAZE! "
-		attack.HitResult.CRIT: prefix = "CRITICAL HIT! "
-
-	var main_msg = "%s%s used %s! %s takes" % [prefix, attacker.name, attack.attack_name, victim.name]
-	var log_node = get_tree().get_first_node_in_group("CombatLog")
-	if log_node:
-		log_node.add_combat_entry(main_msg, str(ceil(damage)), type_color)
-
-	# Spawn Hit VFX
 	if attack.hit_vfx:
 		var vfx = WORLD_VFX_SCENE.instantiate()
-		world.add_child(vfx)
+		world.add_child(vfx) # Or self.add_child if you removed World
 		vfx.global_position = victim.global_position
 		vfx.setup(attack.hit_vfx)
 
-	# Death Check
-	if victim is Unit and victim.stats.health <= 0:
-		_handle_unit_death(victim)
-	elif victim is WorldObject and victim.stats.health <= 0:
-		_handle_object_death(victim)
+	# 2. Logic Exit on Miss/Resist
+	if result == attack.HitResult.MISS:
+		var msg = "%s resisted %s!" % [victim.name, attack.attack_name] if label_override != "" else "%s missed!" % attacker.name
+		_send_to_log(msg, Color.GRAY)
+		return
+
+	# 3. Apply Health Change
+	if victim.has_method("take_damage"):
+		victim.take_damage(damage) # This triggers the red flash
+	
+	# 4. Apply Status Effects (Spells or Physical buffs)
+	if attack.buff_to_apply:
+		# We can check if it was a Graze to reduce effect duration
+		var is_graze = (result == attack.HitResult.GRAZE)
+		victim.stats.add_buff(attack.buff_to_apply, is_graze)
+
+	# 5. Death Check
+	if victim.stats.health <= 0:
+		if victim is Unit:
+			_handle_unit_death(victim)
+		else:
+			_handle_object_death(victim)
 
 # --- SELECTION & HIGHLIGHTS ---
 

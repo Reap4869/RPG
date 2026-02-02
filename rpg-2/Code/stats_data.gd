@@ -53,10 +53,10 @@ signal mana_changed(cur_mana: float, max_mana: float)
 @export var base_graze_multiplier: float = 0.5 # 50% damage
 
 @export_group("Spell Attributes")
-@export var base_spell_accuracy: float = 0.0
-@export var base_spell_evasion: float = 0.0
+@export var base_spell_accuracy: float = 100.0
+@export var base_spell_resistance: float = 10.0 # This is the "Evasion" for spells
 @export var base_spell_graze_chance: float = 40.0
-@export var spell_resistance_chance: float = 10.0 # The 10% base resist
+@export var base_spell_graze_multiplier: float = 0.5
 
 # Current Calculated Attributes
 var current_strength: float
@@ -69,6 +69,11 @@ var current_accuracy: float
 var current_evasion: float
 var current_graze_chance: float
 var current_graze_multiplier: float
+
+var current_spell_accuracy: float
+var current_spell_resistance: float
+var current_spell_graze_chance: float
+var current_spell_graze_multiplier: float
 
 # Derived Stats (The ones using your formulas)
 var current_max_health: float
@@ -143,7 +148,11 @@ func recalculate_stats() -> void:
 	current_evasion = base_evasion
 	current_graze_chance = base_graze_chance
 	current_graze_multiplier = base_graze_multiplier
-
+	current_spell_accuracy = base_spell_accuracy
+	current_spell_resistance = base_spell_resistance
+	current_spell_graze_chance = base_spell_graze_chance
+	current_spell_graze_multiplier = base_graze_multiplier
+	
 	# Ensure resources don't exceed new maximums
 	health = health
 	stamina = stamina
