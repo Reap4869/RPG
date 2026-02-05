@@ -2,6 +2,7 @@ class_name MapManager
 extends Node
 
 @onready var vfx_container_scene = preload("uid://pc6usvw46jfj")
+@export var surface_rules: Dictionary[Globals.SurfaceType, SurfaceData] = {}
 @export var cell_size := Vector2i(32, 32)
 
 var grid_data: Dictionary = {} # Key: Vector2i, Value: CellData
@@ -15,9 +16,6 @@ func _ready() -> void:
 
 func setup_map(data: MapData) -> void:
 	load_map_from_resource(data)
-	# If you add a "initial_surfaces" dictionary to MapData:
-	# for cell in data.initial_surfaces:
-	#    apply_surface_to_cell(cell, ...)
 	var music_player = get_tree().root.find_child("MusicPlayer", true, false)
 	if music_player and data.music:
 		music_player.stream = data.music
@@ -66,7 +64,12 @@ func load_map_from_resource(data: MapData) -> void:
 					astar.set_point_weight_scale(cell, 2.0)
 			
 			grid_data[cell] = cell_info
-
+	# 4. Setup Initial Surfaces from Map Resource
+	if data.has_method("get_initial_surfaces"): # Assuming you add this to MapData
+		for cell in data.initial_surfaces:
+			var res = data.initial_surfaces[cell]
+			# Pass 999 for permanent map surfaces
+			apply_surface_to_cell(cell, res, 999)
 	# 3. Final AStar update
 	astar.update()
 
@@ -184,44 +187,112 @@ func is_area_walkable(top_left_cell: Vector2i, unit_size: Vector2i, unit_to_igno
 				
 	return true
 
-func apply_surface_to_cell(cell: Vector2i, type: Globals.SurfaceType, duration: int, vfx_data: VisualEffectData) -> void:
+func apply_surface_to_cell(cell: Vector2i, new_surface: SurfaceData, duration: int) -> void:
 	if not grid_data.has(cell): return
-	
-	var data = grid_data[cell]
+	var cell_info = grid_data[cell]
+	var old_type = cell_info.surface_type
+	var new_type = new_surface.type
 
-	# 1. Clean up old node
-	if is_instance_valid(data.surface_vfx_node):
-		data.surface_vfx_node.queue_free()
-	
-	# 2. Update Data
-	data.surface_type = type
-	data.surface_timer = duration
-	
-	# 3. SPAWN THE VFX (Check if this part is actually running)
-	if type != Globals.SurfaceType.NONE:
-		if vfx_data == null:
-			print("DEBUG: Cannot spawn surface because vfx_data is NULL!")
-		else:
-			_spawn_surface_vfx(cell, vfx_data)
+	# 1. CHECK FOR SPECIAL INTERACTIONS
+	# FIRE hits POISON = Explosion
+	if (old_type == Globals.SurfaceType.POISON and new_type == Globals.SurfaceType.FIRE) or \
+	   (old_type == Globals.SurfaceType.FIRE and new_type == Globals.SurfaceType.POISON):
+		_trigger_explosion(cell)
+		_clear_surface_at_cell(cell)
+		return # Elements consumed by explosion
 
-func _spawn_surface_vfx(cell: Vector2i, vfx_data: VisualEffectData) -> void:
+	# 2. DEFAULT BEHAVIOR: New replaces Old
+	_clear_surface_at_cell(cell)
+	print("%s surface removed" % [Globals.SurfaceType.keys()[old_type]])
+	
+	# 3. SET NEW DATA
+# If duration is 0 or -1, we fall back to the resource's default
+	var final_duration = duration if duration > 0 else new_surface.default_duration
+	cell_info.surface_type = new_type
+	cell_info.surface_timer = final_duration
+	print("New %s surface, duration %d" % [Globals.SurfaceType.keys()[new_type], duration])
+	
+	# 4. SPAWN VISUALS
+	if new_surface.vfx_template:
+		_spawn_surface_vfx(cell, new_surface.vfx_template, duration)
+
+func _spawn_surface_vfx(cell: Vector2i, vfx_data: VisualEffectData, duration: int) -> void:
 	var data = grid_data[cell]
 	
 	var vfx = vfx_container_scene.instantiate() as WorldVFX
 	add_child(vfx)
 	
 	vfx.global_position = cell_to_world(cell)
-	vfx.setup(vfx_data) # This now applies the scale!
+	vfx.setup(vfx_data, duration) # This now applies the scale!
 	
 	data.surface_vfx_node = vfx
+
+func apply_surface_gameplay_effect(top_left_cell: Vector2i, unit: Node2D) -> void:
+	var size = unit.data.grid_size
+	
+	# Loop through the unit's footprint based on its top-left position
+	for x in range(size.x):
+		for y in range(size.y):
+			var current_tile = top_left_cell + Vector2i(x, y)
+			var cell_info = grid_data.get(current_tile)
+			
+			if cell_info and cell_info.surface_type != Globals.SurfaceType.NONE:
+				var surface_data = Globals.SURFACES.get(cell_info.surface_type)
+				if surface_data and surface_data.buff_to_apply:
+					# This will call Stats.add_buff(), which handles Burn/Wet interactions
+					unit.stats.add_buff(surface_data.buff_to_apply)
+
+# Helper function to keep code clean
+func _clear_surface_at_cell(cell: Vector2i):
+	var data = grid_data[cell]
+	if is_instance_valid(data.surface_vfx_node):
+		data.surface_vfx_node.queue_free()
+	data.surface_vfx_node = null
+	data.surface_type = Globals.SurfaceType.NONE
+	data.surface_timer = 0
 
 func tick_surfaces() -> void:
 	for cell in grid_data:
 		var cell_info = grid_data[cell]
-		# Use 'is_instance_valid' because the node might have queue_free'd itself
-		if is_instance_valid(cell_info.surface_vfx_node):
-			cell_info.surface_vfx_node.tick_turn()
-		else:
-			# If the node is gone, reset the data
-			cell_info.surface_vfx_node = null
-			cell_info.surface_type = Globals.SurfaceType.NONE
+		
+		# Only tick cells that actually have a surface
+		if cell_info.surface_type != Globals.SurfaceType.NONE:
+			# Decrement the timer
+			cell_info.surface_timer -= 1
+			print("Surface %s at %s. Turns remaining: %d" % [
+				Globals.SurfaceType.keys()[cell_info.surface_type], 
+				cell, 
+				cell_info.surface_timer
+			])
+			
+			# If the timer hits zero, clean up
+			if cell_info.surface_timer <= 0:
+				print("Surface %s at %s expired." % [Globals.SurfaceType.keys()[cell_info.surface_type], cell])
+				_clear_surface_at_cell(cell)
+			else:
+				# If it's still active, tell the VFX to update if needed
+				if is_instance_valid(cell_info.surface_vfx_node):
+					cell_info.surface_vfx_node.tick_turn()
+	
+func _trigger_explosion(cell: Vector2i):
+	print("BOOM! Poison ignited at ", cell)
+	
+	# 1. Spawn a one-shot explosion VFX (Fireball style)
+	# You can use a generic explosion VisualEffectData here
+	# _spawn_one_shot_vfx(cell, explosion_vfx_data)
+	
+	# 2. Damage units in the cell
+	# We search for the unit using your occupancy_grid or similar
+	#var game = get_tree().root.find_child("Game", true, false) 
+	#if game:
+	#	var unit = game.get_unit_at_cell(cell)
+	#	if unit:
+	#		# Apply massive fire damage directly
+	#		game._apply_tick_damage(unit, 20, Globals.DamageType.FIRE)
+	#		_send_to_combat_log("Explosion deals 20 fire damage to %s!" % unit.name, Color.ORANGE)
+	
+	# 3. Optional: Chain Reaction
+	# Check adjacent cells for more poison and trigger them too!
+	# for neighbor in get_surrounding_cells(cell):
+	#     if grid_data[neighbor].surface_type == Globals.SurfaceType.POISON:
+	#         _trigger_explosion(neighbor)

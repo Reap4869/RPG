@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://cdr2vkkm733iv"]
+
+[ext_resource type="PackedScene" uid="uid://bdvkkjngj5pv1" path="res://Scene/Surfaces/EarthSurfaceVFX.tscn" id="1_n4ymm"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_vp7st"]
+
+[resource]
+script = ExtResource("2_vp7st")
+effect_name = "EarthSurface"
+effect_scene = ExtResource("1_n4ymm")
+duration_type = 1
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

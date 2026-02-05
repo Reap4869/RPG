@@ -28,7 +28,7 @@ func _draw() -> void:
 		selector = get_tree().get_first_node_in_group("Selector")
 		if not selector: return
 	
-	if Globals.show_cell_occupancy:
+	if Globals.show_cell_ocupancy:
 		_draw_occupancy_overlay()
 
 	if Globals.show_cell_outlines:
@@ -48,7 +48,8 @@ func _draw() -> void:
 	draw_rect(Rect2(rect_pos, rect_size), draw_color, true)
 	draw_rect(Rect2(rect_pos, rect_size), draw_color, false, 2.0)
 
-	if active_unit.is_moving: return 
+	if not active_unit or active_unit.is_moving: 
+		return
 
 	if display_mode == "attack":
 		_draw_hover_target_highlight()
@@ -169,24 +170,43 @@ func _is_in_range_of_footprint(origin: Vector2i, size: Vector2i, target: Vector2
 	return false
 
 func _draw_path_preview() -> void:
-	if not active_unit or active_unit.path.is_empty():
+	# 1. Use cached_path! active_unit.path is only for live movement.
+	if not active_unit or cached_path.is_empty():
 		return
 		
 	var unit_size = active_unit.data.grid_size
-	var tile_size = 32
-	var path_color = Color(1, 1, 1, 0.4) # White/Transparent
+	var tile_size = Globals.TILE_SIZE
 	
-	# We use the current path stored in the unit
-	for point in active_unit.path:
-		var cell = map_manager.world_to_cell(point)
+	# 2. Iterate the WHOLE path. 
+	# We start at 1 to skip the tile the unit is ALREADY on.
+	for i in range(0, cached_path.size()):
+		var cell = cached_path[i]
 		
-		# Draw a rect for the FULL footprint at this step of the path
+		# --- HAZARD CHECK ---
+		var is_hazard = false
+		for x in range(unit_size.x):
+			for y in range(unit_size.y):
+				var f_cell = cell + Vector2i(x, y)
+				var d = map_manager.grid_data.get(f_cell)
+				if d and d.surface_type != Globals.SurfaceType.NONE:
+					is_hazard = true; break
+		
+		# Logic: If it's the last tile in the path, we can draw it differently 
+		# or let the Ghost Destination handle it.
+		#var is_last = (i == cached_path.size() - 1)
+		var path_color = Color(1, 0, 0, 0.5) if is_hazard else Color(1, 1, 1, 0.4)
+		
 		var rect_pos = Vector2(cell * tile_size)
 		var rect_size = Vector2(unit_size * tile_size)
 		
-		draw_rect(Rect2(rect_pos, rect_size), path_color, false, 1.0)
+		# Draw the step
+		draw_rect(Rect2(rect_pos, rect_size), path_color, false, 2.0)
+		path_color.a = 0.1
+		draw_rect(Rect2(rect_pos, rect_size), path_color, true)
 
 func _draw_ghost_destination() -> void:
+	#if cached_path.is_empty(): 
+	#	return
 	var hovered_cell = selector.current_cell
 	
 	# 1. ONLY recalculate if the mouse actually moved
@@ -210,13 +230,13 @@ func _draw_ghost_destination() -> void:
 		# Only draw the error box if we are actually inside the map 
 		# but the path is blocked/too long
 		if map_manager.is_within_bounds(hovered_cell):
-			var error_pos = Vector2(hovered_cell * 32)
-			draw_rect(Rect2(error_pos, Vector2(32, 32)), Color(1, 0, 0, 0.5), true)
+			var error_pos = Vector2(hovered_cell * Globals.TILE_SIZE)
+			draw_rect(Rect2(error_pos, Vector2(Globals.TILE_SIZE, Globals.TILE_SIZE)), Color(1, 0, 0, 0.5), true)
 		return
 	
 	# 3. Draw logic (The "Land" point)
 	var destination_cell = cached_path[-1]
-	var tile_size = 32
+	var tile_size = Globals.TILE_SIZE
 	var grid_local_pos = Vector2(destination_cell * tile_size)
 
 	var visual_scale = active_unit.data.visual_scale

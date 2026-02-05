@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://bw46qro68ou07"]
+
+[ext_resource type="PackedScene" uid="uid://hm2b0wyiagj2" path="res://Scene/Surfaces/WaterSurfaceVFX.tscn" id="1_vtp45"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_aedry"]
+
+[resource]
+script = ExtResource("2_aedry")
+effect_name = "WaterSurface"
+effect_scene = ExtResource("1_vtp45")
+duration_type = 1
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

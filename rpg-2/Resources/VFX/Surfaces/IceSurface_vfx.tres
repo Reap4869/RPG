@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://d047i171yk7en"]
+
+[ext_resource type="PackedScene" uid="uid://b05njuytdkgiu" path="res://Scene/Surfaces/IceSurfaceVFX.tscn" id="1_jjfco"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_kl4xw"]
+
+[resource]
+script = ExtResource("2_kl4xw")
+effect_name = "IceSurface"
+effect_scene = ExtResource("1_jjfco")
+duration_type = 1
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

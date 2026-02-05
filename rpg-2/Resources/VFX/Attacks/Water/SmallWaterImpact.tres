@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://grtey4sntoyp"]
+
+[ext_resource type="PackedScene" uid="uid://bj7gf3tavea4l" path="res://Scene/Water/WaterHitVFX.tscn" id="1_xvmpb"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_jadx8"]
+
+[resource]
+script = ExtResource("2_jadx8")
+effect_scene = ExtResource("1_xvmpb")
+visual_scale = 2.0
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

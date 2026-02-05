@@ -3,7 +3,7 @@
 [ext_resource type="Resource" uid="uid://cdtqcevwqes8r" path="res://Resources/Slimes/Slime_Ai.tres" id="1_egdx6"]
 [ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="2_6xikb"]
 [ext_resource type="Resource" uid="uid://ip56bamlye1p" path="res://Resources/Attacks/Physical/Attack_BodySlam.tres" id="3_g4gd4"]
-[ext_resource type="Resource" uid="uid://bua1daj6k618o" path="res://Resources/Attacks/Water/Attack_WaterGun.tres" id="4_6xikb"]
+[ext_resource type="Resource" uid="uid://bua1daj6k618o" path="res://Resources/Attacks/Water/Attack_WaterShark.tres" id="4_6xikb"]
 [ext_resource type="Resource" uid="uid://brf8svemwkxhm" path="res://Resources/Slimes/WaterSlime_Stats.tres" id="5_g4gd4"]
 [ext_resource type="Script" uid="uid://caug8a8g82wya" path="res://Code/unit_data.gd" id="5_o6hhc"]
 [ext_resource type="Texture2D" uid="uid://1k63byfw7ewi" path="res://Art/RPG_SpriteSheet.png" id="6_xaqlv"]

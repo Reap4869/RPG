@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://i1pixn050k2"]
+
+[ext_resource type="PackedScene" uid="uid://bv74ayprxvfwq" path="res://Scene/Surfaces/DarkSurfaceVFX.tscn" id="1_fs6vg"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_k4xwf"]
+
+[resource]
+script = ExtResource("2_k4xwf")
+effect_name = "DarkSurface"
+effect_scene = ExtResource("1_fs6vg")
+duration_type = 1
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

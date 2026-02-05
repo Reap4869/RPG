@@ -1,8 +1,8 @@
 [gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://bm8b8cs3eby6i"]
 
-[ext_resource type="Resource" uid="uid://cdu844ijx72qd" path="res://Resources/explosion_vfx.tres" id="1_qvp8o"]
+[ext_resource type="Resource" uid="uid://cdu844ijx72qd" path="res://Resources/VFX/Attacks/Fire/SmallFireImpact.tres" id="1_qvp8o"]
 [ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="2_2p05v"]
-[ext_resource type="Resource" uid="uid://cty1yryuaa712" path="res://Resources/fireSurface_vfx.tres" id="3_q4akf"]
+[ext_resource type="Resource" uid="uid://cty1yryuaa712" path="res://Resources/VFX/Surfaces/FireSurface_vfx.tres" id="3_q4akf"]
 
 [resource]
 script = ExtResource("2_2p05v")

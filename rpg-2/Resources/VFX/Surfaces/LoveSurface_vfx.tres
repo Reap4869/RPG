@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://bie0ow7wrdsou"]
+
+[ext_resource type="PackedScene" uid="uid://b1ij1loofg2ar" path="res://Scene/Surfaces/LoveSurfaceVFX.tscn" id="1_y57ji"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_xdjo4"]
+
+[resource]
+script = ExtResource("2_xdjo4")
+effect_name = "LoveSurface"
+effect_scene = ExtResource("1_y57ji")
+duration_type = 1
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

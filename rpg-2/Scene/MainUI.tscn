@@ -10,6 +10,9 @@
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_as4we"]
 bg_color = Color(0.6, 0.6, 0.6, 0)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kog0a"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_50gh3"]
 bg_color = Color(0.6, 0.6, 0.6, 0)
 
@@ -87,6 +90,18 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_as4we")
 layout_mode = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="UnitInfoPanel/PanelContainer/MarginContainer" unique_id=2105908340]
+layout_mode = 2
+
+[node name="BuffContainer" type="HBoxContainer" parent="UnitInfoPanel/PanelContainer/MarginContainer/VBoxContainer" unique_id=1620792378]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="UnitInfoPanel/PanelContainer/MarginContainer/VBoxContainer/BuffContainer" unique_id=1645232807]
+custom_minimum_size = Vector2(10, 10)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_kog0a")
+
+[node name="MarginContainer" type="MarginContainer" parent="UnitInfoPanel/PanelContainer/MarginContainer/VBoxContainer/BuffContainer/PanelContainer" unique_id=1599614442]
 layout_mode = 2
 
 [node name="PanelContainer" type="PanelContainer" parent="UnitInfoPanel/PanelContainer/MarginContainer/VBoxContainer" unique_id=1217162307]

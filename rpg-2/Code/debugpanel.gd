@@ -11,14 +11,16 @@ func _ready() -> void:
 	show_cells.button_pressed = Globals.show_cell_outlines
 	show_cells.toggled.connect(_on_show_cell_outlines)
 	
-	show_ocupancy.button_pressed = Globals.show_cell_outlines
-	show_ocupancy.toggled.connect(_on_show_paths_toggled)
+	show_ocupancy.button_pressed = Globals.show_cell_ocupancy
+	show_ocupancy.toggled.connect(_on_show_ocupancy_toggled)
 
 func _on_show_ocupancy_toggled(value: bool) -> void:
 	Globals.show_cell_ocupancy = value
+	_request_redraw()
 
 func _on_show_paths_toggled(value: bool) -> void:
 	Globals.show_unit_paths = value
+	_request_redraw()
 
 func _on_show_cell_outlines(value: bool) -> void:
 	Globals.show_cell_outlines = value
@@ -31,5 +33,10 @@ func _on_show_cell_outlines(value: bool) -> void:
 	if not highlights:
 		highlights = get_tree().root.find_child("CellHighlights", true, false)
 		
+	if highlights:
+		highlights.queue_redraw()
+
+func _request_redraw():
+	var highlights = get_tree().get_first_node_in_group("Highlights")
 	if highlights:
 		highlights.queue_redraw()

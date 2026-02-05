@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://bqar6t8grratc"]
+
+[ext_resource type="PackedScene" uid="uid://dsih63mkqkr70" path="res://Scene/Water/SharkWaterProjectileVFX.tscn" id="1_w6fam"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_0oip8"]
+
+[resource]
+script = ExtResource("2_0oip8")
+effect_scene = ExtResource("1_w6fam")
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

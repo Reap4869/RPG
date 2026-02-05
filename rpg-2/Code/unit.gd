@@ -1,6 +1,7 @@
 extends Node2D
 class_name Unit
 
+signal cell_entered(cell: Vector2i)
 signal movement_finished(unit: Unit, final_cell: Vector2i)
 
 @export var data: UnitData
@@ -89,6 +90,10 @@ func _process(delta: float) -> void:
 	global_position = global_position.move_toward(target_pos, 200.0 * delta)
 	
 	if global_position.distance_to(target_pos) < 0.1:
+		# --- NEW: Trigger surface effect for the cell we just reached ---
+		var reached_cell = map_manager.world_to_cell(target_pos)
+		cell_entered.emit(reached_cell)
+		
 		path_index += 1
 		
 		# Check if we finished the whole path
@@ -171,3 +176,7 @@ func play_hit_flash() -> void:
 	tween.tween_property(sprite, "modulate", Color.RED, 0.3)
 	# Turn it back to normal
 	tween.tween_property(sprite, "modulate", Color.WHITE, 0.3)
+
+func take_damage(amount: int):
+	stats.health -= amount # If this line is missing, the health bar never moves!
+	play_hit_flash()

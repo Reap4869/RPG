@@ -8,23 +8,30 @@
 [ext_resource type="Resource" uid="uid://2f1flo6q5gko" path="res://Resources/TestMap.tres" id="2_yjs1f"]
 [ext_resource type="Script" uid="uid://ctarykl2b1wb2" path="res://Code/cell_highlights.gd" id="5_8f6ah"]
 [ext_resource type="Script" uid="uid://cli37j2rtel3f" path="res://Code/selector.gd" id="5_thj8p"]
-[ext_resource type="Resource" uid="uid://cty1yryuaa712" path="res://Resources/fireSurface_vfx.tres" id="6_cvvdq"]
 [ext_resource type="Script" uid="uid://bc5qt38uj2tf1" path="res://Code/units_manager.gd" id="6_twwsd"]
+[ext_resource type="Script" uid="uid://ydig1pvwmt0u" path="res://Code/surface_data.gd" id="6_vy0et"]
 [ext_resource type="Script" uid="uid://d1p1lq05l7whd" path="res://Code/player_group.gd" id="7_c6b8m"]
+[ext_resource type="Resource" uid="uid://bo3y8gmr7fltp" path="res://Resources/Surfaces/FireSurfaceData.tres" id="7_sqb0o"]
+[ext_resource type="Resource" uid="uid://cw7ysqu0sfnv2" path="res://Resources/Surfaces/WaterSurfaceData.tres" id="8_gji41"]
 [ext_resource type="PackedScene" uid="uid://cghpi6vcsxqqp" path="res://Scene/object.tscn" id="8_yjs1f"]
 [ext_resource type="Script" uid="uid://c8botpsepyty" path="res://Code/enemy_group.gd" id="9_0ka5k"]
+[ext_resource type="Resource" uid="uid://v7jx7jj6leja" path="res://Resources/Surfaces/PoisonSurfaceData.tres" id="9_5smqc"]
 [ext_resource type="Script" uid="uid://bii62hovn12q7" path="res://Code/object_manager.gd" id="10_m52p7"]
 
 [node name="Game" type="Node2D" unique_id=1683554374]
 script = ExtResource("1_sagxc")
 starting_map = ExtResource("2_yjs1f")
-fire_vfx_resource = ExtResource("6_cvvdq")
 
 [node name="World" type="Node2D" parent="." unique_id=410404395]
 script = ExtResource("2_sagxc")
 
 [node name="MapManager" type="Node2D" parent="World" unique_id=133042089 groups=["MapManager"]]
 script = ExtResource("2_h8jt7")
+surface_rules = Dictionary[int, ExtResource("6_vy0et")]({
+1: ExtResource("7_sqb0o"),
+2: ExtResource("8_gji41"),
+6: ExtResource("9_5smqc")
+})
 
 [node name="CellHighlights" type="Node2D" parent="World" unique_id=589172015 groups=["Highlights"]]
 script = ExtResource("5_8f6ah")

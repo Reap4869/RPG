@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="BuffResource" format=3 uid="uid://rh11y0d2t4px"]
+
+[ext_resource type="Script" uid="uid://d0ybwy8s8axa5" path="res://Code/buff_data.gd" id="1_c14h0"]
+
+[resource]
+script = ExtResource("1_c14h0")
+buff_name = "Wet"
+on_applied_message = "%s is Wet!"
+on_expired_message = "%s is no longer Wet."
+damage_per_tick = 3
+damage_type = 3
+metadata/_custom_type_script = "uid://d0ybwy8s8axa5"

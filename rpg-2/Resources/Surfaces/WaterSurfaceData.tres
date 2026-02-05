@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="SurfaceData" format=3 uid="uid://cw7ysqu0sfnv2"]
+
+[ext_resource type="Resource" uid="uid://rh11y0d2t4px" path="res://Resources/Buffs/Wet_Buff.tres" id="1_dj1ov"]
+[ext_resource type="Script" uid="uid://ydig1pvwmt0u" path="res://Code/surface_data.gd" id="1_w0yex"]
+[ext_resource type="Resource" uid="uid://bw46qro68ou07" path="res://Resources/VFX/Surfaces/WaterSurface_vfx.tres" id="3_bfwhs"]
+
+[resource]
+script = ExtResource("1_w0yex")
+type = 1
+buff_to_apply = ExtResource("1_dj1ov")
+vfx_template = ExtResource("3_bfwhs")
+metadata/_custom_type_script = "uid://ydig1pvwmt0u"

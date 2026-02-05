@@ -40,8 +40,8 @@ enum HitResult { MISS, GRAZE, HIT, CRIT }
 @export var graze_multiplier_bonus: float = 0.0
 
 @export_group("Effects")
-@export var buff_to_apply: StatBuff # Optional buff resource
-@export var surface_to_create: Globals.SurfaceType = Globals.SurfaceType.FIRE
+@export var buff_to_apply: BuffResource # Optional buff resource
+@export var surface_to_create: SurfaceData
 @export var surface_duration: int = 0 # How many turns it lasts
 
 @export_group("Visual Effects")
@@ -51,7 +51,6 @@ enum HitResult { MISS, GRAZE, HIT, CRIT }
 @export var projectile_vfx: VisualEffectData # projectile sprite
 @export var impact_vfx: VisualEffectData   # Explosion on the ground
 @export var hit_vfx: VisualEffectData # unit effect on being hit
-@export var surface_vfx: VisualEffectData # The surface it leaves behind
 
 @export_group("Sound Effects")
 @export var hold_sfx: AudioStream 
@@ -72,12 +71,13 @@ func get_damage_data(attacker_stats: Resource, defender_stats: Resource) -> Arra
 	var roll = randf() * 100.0
 	var result = HitResult.MISS
 	var multiplier_used = 1.0
+	var ceilings_info = "" # For the console log
 	
 	# --- 1. ACCURACY BRANCHING ---
 	if category == Globals.AttackCategory.SPELL:
-		# Spell Logic: Resist (10%) | Graze (40%) | Hit (50%)
 		var miss_ceiling = (100.0 - attacker_stats.current_spell_accuracy) + defender_stats.current_spell_resistance
 		var graze_ceiling = miss_ceiling + defender_stats.base_spell_graze_chance
+		ceilings_info = "Miss < %.1f | Graze < %.1f" % [miss_ceiling, graze_ceiling]
 		
 		if roll <= miss_ceiling:
 			result = HitResult.MISS
@@ -89,12 +89,13 @@ func get_damage_data(attacker_stats: Resource, defender_stats: Resource) -> Arra
 			result = HitResult.HIT
 			multiplier_used = 1.0
 	else:
-		# Physical Logic (Your existing code)
+		# Physical Logic
 		var miss_ceiling = (100.0 - attacker_stats.current_accuracy) + defender_stats.current_evasion - accuracy_bonus
 		var total_graze_chance = attacker_stats.current_graze_chance + graze_chance_bonus
 		var graze_ceiling = miss_ceiling + total_graze_chance
 		var total_crit_chance = attacker_stats.current_crit_chance + crit_chance_bonus
 		var crit_threshold = 100.0 - total_crit_chance
+		ceilings_info = "Miss < %.1f | Graze < %.1f | Crit > %.1f" % [miss_ceiling, graze_ceiling, crit_threshold]
 
 		if roll <= miss_ceiling:
 			result = HitResult.MISS
@@ -104,29 +105,53 @@ func get_damage_data(attacker_stats: Resource, defender_stats: Resource) -> Arra
 			multiplier_used = attacker_stats.current_graze_multiplier + graze_multiplier_bonus
 		else:
 			result = HitResult.HIT
+			multiplier_used = 1.0 # Default Hit
 			if roll >= crit_threshold:
 				result = HitResult.CRIT
 				multiplier_used = attacker_stats.current_crit_multiplier + crit_multiplier_bonus
 
 	# --- 2. SHARED DAMAGE FORMULA ---
-	# (Calculate raw damage using the multiplier we just found)
 	var stat_bonus = _get_scaling_bonus(attacker_stats)
+	var stat_label = ScalingStat.keys()[scaling_stat].to_upper() # Gets "STRENGTH", "AGILITY", etc.
+	# Note: using 'multiplier' (from resource) * 'multiplier_used' (from roll)
 	var flat_damage = (stat_bonus * multiplier) * multiplier_used
 	
-	var dice_roll = 0
+	# Dice Logic with Breakdown
+	var dice_rolls = []
+	var dice_sum = 0
 	for i in range(dice_count):
-		dice_roll += Globals.roll(dice_type)
+		var r = Globals.roll(dice_type)
+		dice_rolls.append(r)
+		dice_sum += r
 	
-	var final_dice_damage = float(dice_roll) * multiplier_used
+	var final_dice_damage = float(dice_sum) * multiplier_used
 	var total_pre_resist = flat_damage + final_dice_damage
 	
-	# Resistances (Fire, Water, etc. work exactly the same for Spells/Phys)
+	# Resistances (Fire, Water, etc.)
 	var resist_pct = defender_stats.get_resistance(damage_type)
 	var final_damage = total_pre_resist * (1.0 - resist_pct)
 
-	# --- 3. CONSOLE LOGGING (With "Resisted" Support) ---
+	# --- 3. CONSOLE LOGGING ---
+	var attacker_name = attacker_stats.character_name if "character_name" in attacker_stats else "Attacker"
+	var target_name = defender_stats.character_name if "character_name" in defender_stats else defender_stats.object_name
 	var result_name = "RESISTED" if (result == HitResult.MISS and category == Globals.AttackCategory.SPELL) else HitResult.keys()[result]
-	print("[%s] Result: %s | Final Damage: %d" % [category, result_name, roundi(final_damage)])
+	
+	print("---------------------------------")
+	print("%s used %s!" % [attacker_name, attack_name])
+	print("It hit %s for %d damage!" % [target_name, roundi(final_damage)])
+	print("Type: %s | Roll: %d | %s | It's a %s!" % [Globals.AttackCategory.keys()[category], roundi(roll), ceilings_info, result_name])
+	
+	# Dice string formatting: 2d6 = 6 (2 + 4)
+	var dice_details = str(dice_rolls).replace("[", "").replace("]", "").replace(",", " +")
+	var dice_str = "%dd%s = %d (%s)" % [dice_count, dice_type, dice_sum, dice_details]
+	
+	# Logic for: (STR 15 * 1.0 AttkMult) * 1.0 Rollmult...
+	print("Total: %.1f -> (%s %d * %.1f AttkMult) * %.1f Rollmult = %.1f flat + %s" % [
+		total_pre_resist, stat_label, roundi(stat_bonus), multiplier, multiplier_used, flat_damage, dice_str
+	])
+	
+	print("Target Resist (%s): %d%% | FINAL DAMAGE: %d" % [Globals.DamageType.keys()[damage_type], resist_pct * 100, roundi(final_damage)])
+	print("---------------------------------")
 
 	return [maxf(0.0, final_damage), result]
 
@@ -147,18 +172,18 @@ func _get_spell_result(attacker: Resource, defender: Resource) -> Array:
 	var miss_ceiling = (100.0 - attacker.current_spell_accuracy) + defender.current_spell_resistance
 	var graze_ceiling = miss_ceiling + defender.base_spell_graze_chance
 	
-	var multiplier = 1.0
+	var dmg_multiplier = 1.0
 	var result = HitResult.HIT
 	
 	# 2. DETERMINE RESULT
 	if roll <= miss_ceiling:
 		result = HitResult.MISS
-		multiplier = 0.0
+		dmg_multiplier = 0.0
 	elif roll <= graze_ceiling:
 		result = HitResult.GRAZE
-		multiplier = defender.base_spell_graze_multiplier
+		dmg_multiplier = defender.base_spell_graze_multiplier
 	else:
 		result = HitResult.HIT
-		multiplier = 1.0
+		dmg_multiplier = 1.0
 		
-	return [multiplier, result]
+	return [dmg_multiplier, result]

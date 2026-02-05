@@ -10,6 +10,7 @@ extends Control
 @onready var identity_label: Label = %IdentityLabel # Renamed/Added for Race/Class
 @onready var description_label: Label = %DescriptionLabel 
 @onready var portrait_rect: TextureRect = %PortraitIcon
+@onready var buff_container: HBoxContainer = %BuffContainer
 
 var displayed_unit: Unit
 
@@ -109,6 +110,11 @@ func _connect_signals(stats: Stats) -> void:
 		stats.mana_changed.connect(_on_mana_changed)
 	if not stats.health_depleted.is_connected(_on_unit_death):
 		stats.health_depleted.connect(_on_unit_death)
+	if not stats.buffs_updated.is_connected(_update_buff_icons):
+		stats.buffs_updated.connect(_update_buff_icons)
+	
+	# Trigger it once immediately on display
+	_update_buff_icons(stats.active_buffs)
 
 func _disconnect_signals(stats: Stats) -> void:
 	if stats.health_changed.is_connected(_on_health_changed):
@@ -119,6 +125,44 @@ func _disconnect_signals(stats: Stats) -> void:
 		stats.mana_changed.disconnect(_on_mana_changed)
 	if stats.health_depleted.is_connected(_on_unit_death):
 		stats.health_depleted.disconnect(_on_unit_death)
+	if stats.buffs_updated.is_connected(_update_buff_icons):
+		stats.buffs_updated.disconnect(_update_buff_icons)
+
+func _update_buff_icons(active_buffs: Array) -> void:
+	# Clear old icons
+	for child in buff_container.get_children():
+		child.queue_free()
+	
+	for buff_data in active_buffs:
+		var buff_res = buff_data.resource
+		
+		# Create a new TextureRect for the icon
+		var icon_rect = TextureRect.new()
+		
+		# Set the texture from the resource
+		if buff_res.icon:
+			icon_rect.texture = buff_res.icon
+		
+		# Styling
+		icon_rect.custom_minimum_size = Vector2(24, 24)
+		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		
+		# Add a tooltip so player knows what it is
+		icon_rect.tooltip_text = "%s (%d turns)" % [buff_res.buff_name, buff_data.remaining]
+		
+		var turn_label = Label.new()
+		turn_label.text = str(buff_data.remaining)
+		turn_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		turn_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+		turn_label.add_theme_font_size_override("font_size", 36) # Small font
+		icon_rect.add_child(turn_label)
+		
+		# Add a small color tint (Cyan for buffs, Red for debuffs)
+		#if not buff_res.is_positive:
+		#	icon_rect.modulate = Color(1, 0.6, 0.6) # Slight red tint
+			
+		buff_container.add_child(icon_rect)
 
 # --- Callbacks ---
 

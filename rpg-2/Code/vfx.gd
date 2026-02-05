@@ -5,10 +5,9 @@ var data: VisualEffectData
 var current_turns: int = 0
 var visual_instance: Node = null
 
-func setup(vfx_data: VisualEffectData) -> void:
-	data = vfx_data
-	current_turns = data.turns_to_last
-	
+func setup(vfx_data: VisualEffectData, duration: int = 0) -> void:
+	data = vfx_data	
+	current_turns = duration # Now the VFX knows when to die
 	visual_instance = data.effect_scene.instantiate()
 	add_child(visual_instance)
 	visual_instance.scale = Vector2(data.visual_scale, data.visual_scale)
@@ -43,6 +42,3 @@ func tick_turn() -> void:
 	# Only care about this if we are a turn-based surface (like fire)
 	if data.duration_type == VisualEffectData.DurationType.TURN_BASED:
 		current_turns -= 1
-		if current_turns <= 0:
-			# You could play a "fade out" animation here
-			queue_free()

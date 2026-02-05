@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://ch18aiyryssbv"]
+
+[ext_resource type="PackedScene" uid="uid://bw8h2wgor48pb" path="res://Scene/Fire/SmallFireProjectileVFX.tscn" id="1_3fe87"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_j4whn"]
+
+[resource]
+script = ExtResource("2_j4whn")
+effect_name = "FireProjectile"
+effect_scene = ExtResource("1_3fe87")
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

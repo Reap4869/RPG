@@ -2,6 +2,7 @@ extends Node
 
 @export var starting_map: MapData 
 @export var fire_vfx_resource: VisualEffectData
+@export var water_vfx_resource: VisualEffectData
 
 @onready var world = $World
 @onready var map_manager = $World/MapManager
@@ -276,53 +277,64 @@ func _execute_multi_target_attack(target_cells: Array[Vector2i]) -> void:
 					
 				_apply_attack_damage(attack, active_unit, victim)
 			# SURFACE LOGIC
-			if attack.surface_to_create != Globals.SurfaceType.NONE:
-				if attack.surface_sfx:
-					play_sfx(attack.surface_sfx, map_manager.cell_to_world(cell))
-				map_manager.apply_surface_to_cell(cell, attack.surface_to_create, attack.surface_duration, attack.surface_vfx)
+			if attack.surface_to_create != null:
+				map_manager.apply_surface_to_cell(cell, attack.surface_to_create, attack.surface_duration)
 
 	# 3. UNLOCK
 	is_attack_in_progress = false # UNLOCK INPUT
-	print("--- MULTI-ATTACK COMPLETE ---")
 	_set_interaction_mode(InteractionMode.SELECT)
 	main_ui.update_buttons(active_unit)
 
 func _apply_attack_damage(attack: AttackResource, attacker: Unit, victim: Node2D) -> void:
+	# 1. Get Math and Result
 	var data = attack.get_damage_data(attacker.stats, victim.stats)
 	var damage = data[0]
 	var result = data[1]
 
-	# Handle the "Resisted" text override
+	# Handle the "Resisted" text override for Spells
 	var label_override = ""
 	if result == attack.HitResult.MISS and attack.category == Globals.AttackCategory.SPELL:
 		label_override = "RESISTED"
 
-	# 1. VFX & Damage Numbers (Always trigger these)
+	# 2. VFX & Damage Numbers
 	_spawn_damage_number(roundi(damage), victim.global_position, attack.damage_type, result, label_override)
 	
 	if attack.hit_vfx:
 		var vfx = WORLD_VFX_SCENE.instantiate()
-		world.add_child(vfx) # Or self.add_child if you removed World
+		world.add_child(vfx)
 		vfx.global_position = victim.global_position
 		vfx.setup(attack.hit_vfx)
 
-	# 2. Logic Exit on Miss/Resist
+	# 3. Logic Exit on Miss
 	if result == attack.HitResult.MISS:
 		var msg = "%s resisted %s!" % [victim.name, attack.attack_name] if label_override != "" else "%s missed!" % attacker.name
 		_send_to_log(msg, Color.GRAY)
 		return
 
-	# 3. Apply Health Change
+	# 4. Apply Health Change (Works for Units and Objects)
 	if victim.has_method("take_damage"):
-		victim.take_damage(damage) # This triggers the red flash
+		victim.take_damage(damage)
 	
-	# 4. Apply Status Effects (Spells or Physical buffs)
-	if attack.buff_to_apply:
-		# We can check if it was a Graze to reduce effect duration
-		var is_graze = (result == attack.HitResult.GRAZE)
-		victim.stats.add_buff(attack.buff_to_apply, is_graze)
+	# 5. Restore Detailed Combat Log (From Old Version)
+	var type_color = Globals.DAMAGE_COLORS.get(attack.damage_type, Color.WHITE)
+	var prefix = ""
+	match result:
+		attack.HitResult.GRAZE: prefix = "GRAZE! "
+		attack.HitResult.CRIT: prefix = "CRITICAL HIT! "
 
-	# 5. Death Check
+	var main_msg = "%s%s used %s! %s takes" % [prefix, attacker.name, attack.attack_name, victim.name]
+	var log_node = get_tree().get_first_node_in_group("CombatLog")
+	if log_node:
+		# Using 'damage' from data[0] and the type_color
+		log_node.add_combat_entry(main_msg, str(roundi(damage)), type_color)
+
+	# 6. Apply Buffs (Restoring the Graze Duration penalty)
+	if attack.buff_to_apply:
+		var is_graze = (result == attack.HitResult.GRAZE)
+		if victim.stats.has_method("add_buff"):
+			victim.stats.add_buff(attack.buff_to_apply, is_graze)
+
+	# 7. Death Check
 	if victim.stats.health <= 0:
 		if victim is Unit:
 			_handle_unit_death(victim)
@@ -330,24 +342,20 @@ func _apply_attack_damage(attack: AttackResource, attacker: Unit, victim: Node2D
 			_handle_object_death(victim)
 
 func _apply_tick_damage(victim: Unit, amount: int, type: Globals.DamageType) -> void:
-	# 1. Calculate mitigated damage based on buffs/base stats
+	# Calculate resistance first
 	var resist_pct = victim.stats.get_resistance(type)
 	var final_amount = roundi(amount * (1.0 - resist_pct))
 	
-	# If fully resisted, we still might want to show "0" or "Resisted"
-	if final_amount <= 0 and amount > 0:
-		_spawn_damage_number(0, victim.global_position, type, AttackResource.HitResult.MISS, "RESISTED")
-		return
-
-	# 2. Apply the mitigated health reduction
+	print("[TICK DMG] %s takes %d %s damage (Resisted: %d%%)" % [victim.name, final_amount, Globals.DamageType.keys()[type], resist_pct * 100])
+	
+	# CRITICAL FIX: Ensure we actually subtract the health!
 	victim.stats.health -= final_amount
 	
-	# 3. Show the number
 	_spawn_damage_number(final_amount, victim.global_position, type, AttackResource.HitResult.HIT)
 	
 	if victim.has_method("play_hit_flash"):
 		victim.play_hit_flash()
-	
+		
 	if victim.stats.health <= 0:
 		_handle_unit_death(victim)
 
@@ -412,10 +420,14 @@ func _set_interaction_mode(new_mode: InteractionMode) -> void:
 func _on_unit_registered(unit: Unit, cell: Vector2i) -> void:
 	register_unit_position(unit, cell)
 	unit.movement_finished.connect(_on_unit_movement_finished)
+	if not unit.stats.request_log.is_connected(_send_to_log):
+		unit.stats.request_log.connect(_send_to_log)
 
 func _on_object_registered(obj: WorldObject, cell: Vector2i) -> void:
 	# Just like register_unit_position, but for objects!
 	register_object_position(obj, cell)
+	if obj.stats and not obj.stats.request_log.is_connected(_send_to_log):
+		obj.stats.request_log.connect(_send_to_log)
 
 func _send_to_log(msg: String, color: Color = Color.WHITE) -> void:
 	var log_node = get_tree().get_first_node_in_group("CombatLog")
@@ -460,41 +472,6 @@ func _setup_camera(map_resource: MapData) -> void:
 
 # --- MOVEMENT ---
 
-func _spawn_damage_number(value: int, pos: Vector2, type: Globals.DamageType, result: AttackResource.HitResult, text_override: String = "") -> void:
-	var label = Label.new() # Create the node directly
-	add_child(label)
-	
-	var display_text = text_override if text_override != "" else str(value)
-	
-	# Setup styling
-	label.text = display_text
-	label.scale = Vector2(2.0, 2.0)
-	# 2. Outline (This makes it readable on any background)
-	label.add_theme_constant_override("outline_size", 4) # Thickness of the outline
-	label.add_theme_color_override("font_outline_color", Color.BLACK)
-	
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.z_index = 100 
-	label.modulate = Globals.DAMAGE_COLORS.get(type, Color.WHITE)
-	
-	# If it's a CRIT, make it bigger!
-	if result == AttackResource.HitResult.CRIT:
-		label.scale = Vector2(3.0, 3.0)
-		label.add_theme_constant_override("outline_size", 4)
-	
-	label.global_position = pos + Vector2(-10, -20) # Start closer to unit head
-	
-	var tween = create_tween().set_parallel(true)
-	
-	# Slow, small float: move up only 20 pixels (less than 1 tile) over 1.2 seconds
-	tween.tween_property(label, "position:y", label.position.y - 25, 1.2)\
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-		
-	# Fade out starts later and lasts longer
-	tween.tween_property(label, "modulate:a", 0.0, 0.6).set_delay(0.8)
-	
-	tween.finished.connect(label.queue_free)
-
 func _handle_movement(target_cell: Vector2i) -> void:
 	if not active_unit or active_unit.is_moving:
 		return
@@ -523,15 +500,29 @@ func _handle_movement(target_cell: Vector2i) -> void:
 	for c in grid_path:
 		world_path.append(map_manager.cell_to_world(c))
 		
+	if not active_unit.cell_entered.is_connected(_on_unit_stepped_on_cell):
+		active_unit.cell_entered.connect(_on_unit_stepped_on_cell.bind(active_unit))
+		
 	active_unit.follow_path(world_path, result[1])
 
+# The function that actually applies the "Hazard" logic
+func _on_unit_stepped_on_cell(cell: Vector2i, unit: Unit) -> void:
+	# This uses the MapManager function we updated earlier to handle large units
+	map_manager.apply_surface_gameplay_effect(cell, unit)
+
 func _on_unit_movement_finished(unit: Unit, final_cell: Vector2i) -> void:
+	# Clean up the signal connection
+	if unit.cell_entered.is_connected(_on_unit_stepped_on_cell):
+		unit.cell_entered.disconnect(_on_unit_stepped_on_cell)
+	
 	register_unit_position(unit, final_cell)
 	print(unit.name," ", final_cell)
 	if highlights:
 		highlights.cached_move_range.clear()
 		highlights.cached_path.clear() # <--- Add this to hide the ghost
 		highlights.queue_redraw()
+	var cell = map_manager.world_to_cell(unit.global_position)
+	map_manager.apply_surface_gameplay_effect(cell, unit)
 
 func is_cell_vacant(cell: Vector2i, ignore_unit: Unit = null) -> bool:
 	if not occupancy_grid.has(cell):
@@ -644,26 +635,34 @@ func _get_aoe_tiles(center: Vector2i, aoe_range: int, shape: Globals.AreaShape) 
 
 # --- TURNS ---
 
-func _start_unit_turn(unit: Unit):
-	# Pass 'self' so the stats can call _apply_tick_damage back in this script
-	unit.stats.apply_turn_start_buffs(unit, self) 
+func _start_unit_turn(unit: Node2D) -> void:
+	# 1. Check the surface beneath the unit
+	var cell = map_manager.world_to_cell(unit.global_position)
+	map_manager.apply_surface_gameplay_effect(cell, unit)
 	
+	# 2. Now process the buffs (This will include the burn they just got from the floor)
+	if unit.stats.has_method("apply_turn_start_buffs"):
+		unit.stats.apply_turn_start_buffs(unit, self)
+	
+	# 3. Death check (in case the burn killed them)
 	if unit.stats.health <= 0:
 		_handle_unit_death(unit)
-		# We need to decide what to call here based on whose turn it is
-		if Globals.current_state == Globals.TurnState.ENEMY_TURN:
-			_process_next_enemy()
-		return
 
 func _start_player_turn() -> void:
 	print("--- PLAYER TURN ---")
+	_send_to_log("--- PLAYER TURN ---", Color.WHITE)
 	Globals.current_state = Globals.TurnState.PLAYER_TURN
 	
 	# Loop through all player units to process their buffs/burns
 	for unit in player_team.get_children():
 		if unit is Unit:
-			_start_unit_turn(unit)
-			
+			_start_unit_turn(unit) # This triggers Burn damage!
+	#Then for objects
+	#for obj in objects_manager.get_children():
+	#	if obj is WorldObject and obj.stats.has_method("apply_turn_start_buffs"):
+			# Pass obj as the 'victim' so tick damage knows where to hit
+	#		obj.stats.apply_turn_start_buffs(obj, self)
+	
 	map_manager.tick_surfaces()
 	player_team.replenish_all_stamina()
 
@@ -837,6 +836,40 @@ func play_sfx(stream: AudioStream, position: Vector2 = Vector2.ZERO) -> AudioStr
 	# Return the player so we can await it!
 	return sfx_player
 
+func _spawn_damage_number(value: int, pos: Vector2, type: Globals.DamageType, result: AttackResource.HitResult, text_override: String = "") -> void:
+	var label = Label.new() # Create the node directly
+	add_child(label)
+	
+	var display_text = text_override if text_override != "" else str(value)
+	
+	# Setup styling
+	label.text = display_text
+	label.scale = Vector2(2.0, 2.0)
+	# 2. Outline (This makes it readable on any background)
+	label.add_theme_constant_override("outline_size", 4) # Thickness of the outline
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.z_index = 100 
+	label.modulate = Globals.DAMAGE_COLORS.get(type, Color.WHITE)
+	
+	# If it's a CRIT, make it bigger!
+	if result == AttackResource.HitResult.CRIT:
+		label.scale = Vector2(3.0, 3.0)
+		label.add_theme_constant_override("outline_size", 4)
+	
+	label.global_position = pos + Vector2(-10, -20) # Start closer to unit head
+	
+	var tween = create_tween().set_parallel(true)
+	
+	# Slow, small float: move up only 20 pixels (less than 1 tile) over 1.2 seconds
+	tween.tween_property(label, "position:y", label.position.y - 25, 1.2)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		
+	# Fade out starts later and lasts longer
+	tween.tween_property(label, "modulate:a", 0.0, 0.6).set_delay(0.8)
+	
+	tween.finished.connect(label.queue_free)
 # --- INPUT OVERRIDE (Fixing Space Bar) ---
 
 func _input(event):

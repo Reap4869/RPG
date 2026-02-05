@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://dpcinltr1my3k"]
+
+[ext_resource type="PackedScene" uid="uid://ce3jt01es1i08" path="res://Scene/Surfaces/ElectricSurfaceVFX.tscn" id="1_32t7a"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_41hri"]
+
+[resource]
+script = ExtResource("2_41hri")
+effect_name = "ElectricSurface"
+effect_scene = ExtResource("1_32t7a")
+duration_type = 1
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

@@ -5,4 +5,5 @@
 [resource]
 script = ExtResource("1_3hoa5")
 character_name = "Reap"
+base_agility = 50.0
 metadata/_custom_type_script = "uid://cbjkyqk7ij6cq"

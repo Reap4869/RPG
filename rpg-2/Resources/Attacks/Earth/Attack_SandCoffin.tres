@@ -3,9 +3,9 @@
 [ext_resource type="AudioStream" uid="uid://lxvkc8fqhup5" path="res://Sound/SFX/Rock/CastSabakokyu.mp3" id="1_cltmq"]
 [ext_resource type="AudioStream" uid="uid://dkxmmglb5a1co" path="res://Sound/SFX/Rock/GritoRockLee.mp3" id="2_gvgeh"]
 [ext_resource type="AudioStream" uid="uid://br1hfbyfq581j" path="res://Sound/SFX/Rock/HitRockTomb.mp3" id="3_kc1eh"]
-[ext_resource type="Resource" uid="uid://ceu85jsfm2geg" path="res://Resources/VFX/EarthHitSandCoffinVFX.tres" id="4_emxwy"]
+[ext_resource type="Resource" uid="uid://ceu85jsfm2geg" path="res://Resources/VFX/Attacks/Earth/EarthHitSandCoffinVFX.tres" id="4_emxwy"]
 [ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="5_pvmhq"]
-[ext_resource type="Resource" uid="uid://n6yi6lq6al8q" path="res://Resources/VFX/EarthTargetCastSandCoffinVFX.tres" id="6_s0mys"]
+[ext_resource type="Resource" uid="uid://n6yi6lq6al8q" path="res://Resources/VFX/Attacks/Earth/EarthTargetCastSandCoffinVFX.tres" id="6_s0mys"]
 
 [resource]
 script = ExtResource("5_pvmhq")

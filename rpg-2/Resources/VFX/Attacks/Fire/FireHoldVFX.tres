@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://c6a6tew18qv7w"]
+
+[ext_resource type="PackedScene" uid="uid://cxrtsjs5yk4et" path="res://Scene/Fire/FireHoldVFX.tscn" id="1_vfhrq"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_jwdeu"]
+
+[resource]
+script = ExtResource("2_jwdeu")
+effect_scene = ExtResource("1_vfhrq")
+duration_type = 3
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

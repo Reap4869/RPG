@@ -3,33 +3,14 @@ class_name Stats
 
 var active_buffs: Array = [] # Stores { "resource": BuffResource, "remaining": int }
 
-enum BuffableStats {
-	MAX_HEALTH,
-	ATTACK,
-	STRENGTH,
-	AGILITY,
-	INTELLIGENCE,
-	MAX_STAMINA,
-	MAX_MANA,
-}
-
-const STAT_CURVES: Dictionary[BuffableStats, Curve] = {
-	BuffableStats.MAX_HEALTH: preload("uid://b2adyunahql7j"),
-	BuffableStats.ATTACK: preload("uid://gycpns8hll7u"),
-	BuffableStats.MAX_STAMINA: preload("uid://ca0lby74n756k"),
-	BuffableStats.MAX_MANA: preload("uid://1x811moyuv5e"),
-	BuffableStats.STRENGTH: preload("uid://cr3piexrfce1c"),
-	BuffableStats.AGILITY: preload("uid://de5ssgwxwb73f"),
-	BuffableStats.INTELLIGENCE: preload("uid://boonfkle4i7cd"),
-}
-
-const BASE_LEVEL_XP: float = 100.0
-
-# Signals updated to pass floats
+signal buffs_updated(active_buffs: Array)
+signal request_log(message: String, color: Color)
 signal health_depleted
 signal health_changed(cur_health: float, max_health: float)
 signal stamina_changed(cur_stamina: float, max_stamina: float)
 signal mana_changed(cur_mana: float, max_mana: float)
+
+const BASE_LEVEL_XP: float = 100.0
 
 # --- Identity ---
 @export_group("Identity")
@@ -64,11 +45,11 @@ signal mana_changed(cur_mana: float, max_mana: float)
 var current_strength: float
 var current_agility: float
 var current_intelligence: float
-var current_attack: float
+
 var current_crit_chance: float
 var current_crit_multiplier: float
-var current_accuracy: float
 var current_evasion: float
+var current_accuracy: float
 var current_graze_chance: float
 var current_graze_multiplier: float
 
@@ -91,7 +72,6 @@ var mana: float = 0.0: set = _on_mana_set
 @export var base_max_health: float = 20.0
 @export var base_max_stamina: float = 50.0
 @export var base_max_mana: float = 20.0
-
 @export var experience: int = 0: set = _on_experience_set
 
 # 0.2 means 20% damage reduction.
@@ -112,8 +92,6 @@ var level: int:
 	get(): return floor(max(1.0, sqrt(experience / BASE_LEVEL_XP) + 0.5))
 	
 
-var stat_buffs: Array[StatBuff]
-
 func _init() -> void:
 	setup_stats.call_deferred()
 
@@ -124,43 +102,47 @@ func setup_stats() -> void:
 	mana = current_max_mana
 
 func recalculate_stats() -> void:
-	var sample_pos: float = clamp((float(level) / 100.0), 0.0, 1.0)
+	# Use the function to get the TOTAL value, not just the sum
+	current_strength = _get_modifier_sum(base_strength, "strength")
+	current_agility = _get_modifier_sum(base_agility, "agility")
+	current_intelligence = _get_modifier_sum(base_intelligence, "intelligence")
 	
-	var get_mult = func(stat_type: BuffableStats):
-		if STAT_CURVES.has(stat_type) and STAT_CURVES[stat_type] is Curve:
-			return STAT_CURVES[stat_type].sample(sample_pos)
-		return 1.0
+	current_crit_chance = _get_modifier_sum(base_crit_chance, "")
+	current_crit_multiplier= _get_modifier_sum(base_crit_multiplier, "")
+	current_accuracy = _get_modifier_sum(base_accuracy, "accuracy")
+	current_evasion = _get_modifier_sum(base_evasion, "evasion")
+	current_graze_chance = _get_modifier_sum(base_graze_chance, "")
+	current_graze_multiplier = _get_modifier_sum(base_graze_multiplier, "")
 
-	# 1. Calculate Base Attributes first
-	current_strength = base_strength * get_mult.call(BuffableStats.STRENGTH)
-	current_agility = base_agility * get_mult.call(BuffableStats.AGILITY)
-	current_intelligence = base_intelligence * get_mult.call(BuffableStats.INTELLIGENCE)
+	current_spell_accuracy = _get_modifier_sum(base_spell_accuracy, "")
+	current_spell_resistance = _get_modifier_sum(base_spell_resistance, "")
+	current_spell_graze_chance = _get_modifier_sum(base_spell_graze_chance, "")
+	current_spell_graze_multiplier = _get_modifier_sum(base_spell_graze_multiplier, "")
 
-	# 2. Process Buffs for Attributes
-	_apply_buff_logic()
-
-	# 3. Calculate Derived Stats using your formulas
-	# Formula: 20 + 2 * STR
+	
+	# Recalculate derived health/stamina based on the NEW current attributes
 	current_max_health = base_max_health + (2.0 * current_strength)
-	current_max_mana = base_max_mana + (2.0 * current_intelligence)
 	current_max_stamina = base_max_stamina + (2.0 * current_agility)
-	current_crit_chance = base_crit_chance
-	current_crit_multiplier = base_crit_multiplier
-	current_accuracy = base_accuracy
-	current_evasion = base_evasion
-	current_graze_chance = base_graze_chance
-	current_graze_multiplier = base_graze_multiplier
-	current_spell_accuracy = base_spell_accuracy
-	current_spell_resistance = base_spell_resistance
-	current_spell_graze_chance = base_spell_graze_chance
-	current_spell_graze_multiplier = base_graze_multiplier
-	
+	current_max_mana = base_max_mana + (2.0 * current_intelligence)
+
 	# Ensure resources don't exceed new maximums
 	health = health
 	stamina = stamina
 	mana = mana
 
 func add_buff(buff_res: BuffResource, is_graze: bool = false):
+	# --- ELEMENTAL INTERACTIONS ---
+	if buff_res.buff_name == "Wet":
+		_remove_buff_by_name("Burn")
+		# Optional: if you want Wet and Burn to cancel each other out:
+		# return 
+	
+	if buff_res.buff_name == "Burn" and _has_buff("Wet"):
+		print("Burn fizzled! Object is Wet.")
+		_send_to_combat_log("%s's fire was put out by water!" % character_name, Color.CYAN)
+		return
+	# ------------------------
+	
 	var dur = buff_res.duration
 	if is_graze: dur = floori(dur / 2.0)
 	
@@ -169,7 +151,18 @@ func add_buff(buff_res: BuffResource, is_graze: bool = false):
 		if b.resource.buff_name == buff_res.buff_name:
 			b.remaining = max(b.remaining, dur)
 			return
+	
+	# In your stats script, you might not have access to the CombatLog directly,
+	# so we can emit a signal or use a Global call.
+	var msg = buff_res.on_applied_message % character_name
+	_send_to_combat_log(msg, Color.ORANGE_RED if not buff_res.is_positive else Color.CYAN)
+	
 	active_buffs.append({ "resource": buff_res, "remaining": dur })
+	print("[BUFF] Added %s for %d turns!" % [buff_res.buff_name, dur])
+	
+	# IMPORTANT: Update stats so +STR or +Agility buffs take effect now
+	recalculate_stats()
+	buffs_updated.emit(active_buffs)
 
 func apply_turn_start_buffs(victim_unit: Unit, game_ref: Node) -> void:
 	var to_remove = []
@@ -184,49 +177,70 @@ func apply_turn_start_buffs(victim_unit: Unit, game_ref: Node) -> void:
 			b.remaining -= 1
 			if b.remaining <= 0:
 				to_remove.append(b)
+				# Trigger the custom "Expired" message
+				var msg = b.resource.on_expired_message % character_name
+				_send_to_combat_log(msg, Color.GRAY)
+				print("%s" % [msg])
 				
 	for b in to_remove:
 		active_buffs.erase(b)
+	
+	if to_remove.size() > 0:
+		recalculate_stats()
+		buffs_updated.emit(active_buffs)
 
-func _apply_buff_logic() -> void:
-	var stat_multipliers: Dictionary = {}
-	var stat_addends: Dictionary = {}
+# Helper to find if a buff exists
+func _has_buff(b_name: String) -> bool:
+	for b in active_buffs:
+		if b.resource.buff_name == b_name: return true
+	return false
 
-	for buff in stat_buffs:
-		var stat_name: String = BuffableStats.keys()[buff.stat].to_lower()
-		match buff.buff_type:
-			StatBuff.BuffType.ADD:
-				stat_addends[stat_name] = stat_addends.get(stat_name, 0.0) + buff.buff_amount
-			StatBuff.BuffType.MULTIPLY:
-				stat_multipliers[stat_name] = stat_multipliers.get(stat_name, 1.0) + buff.buff_amount
+# Helper to remove a buff (useful for cleansing)
+func _remove_buff_by_name(b_name: String) -> void:
+	for i in range(active_buffs.size() - 1, -1, -1):
+		if active_buffs[i].resource.buff_name == b_name:
+			var msg = active_buffs[i].resource.on_expired_message % character_name
+			_send_to_combat_log(msg, Color.GRAY)
+			active_buffs.remove_at(i)
+			buffs_updated.emit(active_buffs)
+	recalculate_stats()
 
-	for stat_name in stat_multipliers:
-		var prop = "current_" + stat_name
-		if prop in self:
-			set(prop, get(prop) * stat_multipliers[stat_name])
-
-	for stat_name in stat_addends:
-		var prop = "current_" + stat_name
-		if prop in self:
-			set(prop, get(prop) + stat_addends[stat_name])
+# Helper function to parse the Dictionary in your BuffResources
+func _get_modifier_sum(base_value: float, stat_key: String) -> float:
+	var flat_mod = 0.0
+	var mult_mod = 1.0
+	
+	for b in active_buffs:
+		if b.resource.stat_modifiers.has(stat_key):
+			if b.resource.buff_type == BuffResource.BuffType.ADD:
+				flat_mod += b.resource.stat_modifiers[stat_key]
+			else:
+				mult_mod *= b.resource.stat_modifiers[stat_key]
+				
+	return (base_value * mult_mod) + flat_mod
 
 func take_damage(amount: float) -> void:
 	health -= amount
 
 func get_resistance(type: Globals.DamageType) -> float:
-	# Start with the base resistance from the dictionary
 	var total_resist = resistances.get(type, 0.0)
+	var stat_key = Globals.DamageType.keys()[type].to_lower() + "_resistance"
 	
-	# Mapping DamageType to the string names used in your BuffResource
-	# Ensure your Burn resource uses "fire_resistance", "water_resistance", etc.
-	var type_string = Globals.DamageType.keys()[type].to_lower() + "_resistance"
+	var add_sum = 0.0
+	var mult_total = 1.0
 	
-	# Add modifiers from active buffs
 	for b in active_buffs:
-		if b.resource.stat_modifiers.has(type_string):
-			total_resist += b.resource.stat_modifiers[type_string]
-			
-	return total_resist
+		if b.resource.stat_modifiers.has(stat_key):
+			if b.resource.buff_type == BuffResource.BuffType.ADD:
+				add_sum += b.resource.stat_modifiers[stat_key]
+			else:
+				# This treats 1.1 as a 10% increase to the stat
+				mult_total *= b.resource.stat_modifiers[stat_key]
+				
+	return (total_resist * mult_total) + add_sum
+	
+func _send_to_combat_log(msg: String, color: Color):
+	request_log.emit(msg, color)
 # --- Setters ---
 
 func _on_health_set(value: float) -> void:

@@ -1,0 +1,44 @@
+[gd_scene format=3 uid="uid://bv74ayprxvfwq"]
+
+[ext_resource type="Texture2D" uid="uid://q8idi6hmoih2" path="res://Art/VFX/SpellSprites.png" id="1_fixd2"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ch3v6"]
+atlas = ExtResource("1_fixd2")
+region = Rect2(1344, 768, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dvhyv"]
+atlas = ExtResource("1_fixd2")
+region = Rect2(1376, 768, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_c4jdk"]
+atlas = ExtResource("1_fixd2")
+region = Rect2(1408, 768, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_im5f4"]
+atlas = ExtResource("1_fixd2")
+region = Rect2(1440, 768, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_2jfrf"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ch3v6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dvhyv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_c4jdk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_im5f4")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="Surface" type="AnimatedSprite2D" unique_id=1915498283]
+sprite_frames = SubResource("SpriteFrames_2jfrf")
+frame_progress = 0.3791368
+speed_scale = 0.3

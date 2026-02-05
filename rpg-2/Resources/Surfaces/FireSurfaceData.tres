@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="SurfaceData" format=3 uid="uid://bo3y8gmr7fltp"]
+
+[ext_resource type="Resource" uid="uid://bt3d2vdjvx17u" path="res://Resources/Buffs/Burn_Buff.tres" id="1_k0p83"]
+[ext_resource type="Script" uid="uid://ydig1pvwmt0u" path="res://Code/surface_data.gd" id="1_wggmw"]
+[ext_resource type="Resource" uid="uid://cty1yryuaa712" path="res://Resources/VFX/Surfaces/FireSurface_vfx.tres" id="3_jps7t"]
+
+[resource]
+script = ExtResource("1_wggmw")
+type = 3
+buff_to_apply = ExtResource("1_k0p83")
+vfx_template = ExtResource("3_jps7t")
+metadata/_custom_type_script = "uid://ydig1pvwmt0u"

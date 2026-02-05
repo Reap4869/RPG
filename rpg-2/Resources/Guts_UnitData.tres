@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="1_7qcju"]
 [ext_resource type="Resource" uid="uid://b73yaedct8wuh" path="res://Resources/Attacks/Fire/Attack_Firebolt.tres" id="2_k58xj"]
-[ext_resource type="Resource" uid="uid://o3im1p02rm5r" path="res://Resources/Attacks/Fire/Attack_Fireball.tres" id="3_07o80"]
+[ext_resource type="Resource" uid="uid://bua1daj6k618o" path="res://Resources/Attacks/Water/Attack_WaterShark.tres" id="3_7qcju"]
 [ext_resource type="Resource" uid="uid://bbv7edbq72mk7" path="res://Resources/Attacks/Fire/Attack_Explosion.tres" id="4_w8454"]
 [ext_resource type="Resource" uid="uid://lsg6ty0g66e6" path="res://Resources/Attacks/Earth/Attack_SandCoffin.tres" id="5_bwa0h"]
 [ext_resource type="Resource" uid="uid://detwxx1vx2tvq" path="res://Resources/Player_Stats.tres" id="6_cdr5y"]
@@ -17,5 +17,5 @@ world_region = Rect2(96, 32, 42, 48)
 portrait_region = Rect2(0, 0, 32, 32)
 sprite_offset = Vector2(0, -10)
 base_stats = ExtResource("6_cdr5y")
-attacks = Array[ExtResource("1_7qcju")]([ExtResource("2_k58xj"), ExtResource("3_07o80"), ExtResource("4_w8454"), ExtResource("5_bwa0h")])
+attacks = Array[ExtResource("1_7qcju")]([ExtResource("2_k58xj"), ExtResource("3_7qcju"), ExtResource("4_w8454"), ExtResource("5_bwa0h")])
 metadata/_custom_type_script = "uid://caug8a8g82wya"

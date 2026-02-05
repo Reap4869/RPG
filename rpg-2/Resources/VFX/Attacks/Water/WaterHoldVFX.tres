@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://c0084puov4w3f"]
+
+[ext_resource type="PackedScene" uid="uid://ck7esm7d778qj" path="res://Scene/Water/WaterHoldVFX.tscn" id="1_8hyjj"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_dajbb"]
+
+[resource]
+script = ExtResource("2_dajbb")
+effect_scene = ExtResource("1_8hyjj")
+duration_type = 3
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

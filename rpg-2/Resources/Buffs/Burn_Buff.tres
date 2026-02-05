@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BuffResource" format=3 uid="uid://bt3d2vdjvx17u"]
+
+[ext_resource type="Script" uid="uid://d0ybwy8s8axa5" path="res://Code/buff_data.gd" id="1_axgf8"]
+[ext_resource type="Texture2D" uid="uid://c87daqbadmb6f" path="res://icon.svg" id="1_ntod0"]
+
+[resource]
+script = ExtResource("1_axgf8")
+buff_name = "Burn"
+icon = ExtResource("1_ntod0")
+stat_modifiers = Dictionary[String, float]({
+"water_resist": 0.1
+})
+damage_per_tick = 3
+metadata/_custom_type_script = "uid://d0ybwy8s8axa5"

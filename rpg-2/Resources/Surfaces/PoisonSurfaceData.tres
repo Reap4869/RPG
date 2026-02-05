@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="SurfaceData" format=3 uid="uid://v7jx7jj6leja"]
+
+[ext_resource type="Script" uid="uid://ydig1pvwmt0u" path="res://Code/surface_data.gd" id="1_gp3rj"]
+
+[resource]
+script = ExtResource("1_gp3rj")
+type = 6
+metadata/_custom_type_script = "uid://ydig1pvwmt0u"

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://bjsfsakiu8vn8"]
+
+[ext_resource type="PackedScene" uid="uid://bsu8qsgmcv5ov" path="res://Scene/Surfaces/AirSurfaceVFX.tscn" id="1_b4hcn"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_23fa1"]
+
+[resource]
+script = ExtResource("2_23fa1")
+effect_name = "AirSurface"
+effect_scene = ExtResource("1_b4hcn")
+duration_type = 1
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

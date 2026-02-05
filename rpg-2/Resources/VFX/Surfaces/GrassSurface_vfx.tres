@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://26l4fcssf4jf"]
+
+[ext_resource type="PackedScene" uid="uid://ce1xsig1hi5xu" path="res://Scene/Surfaces/GrassSurfaceVFX.tscn" id="1_5b0in"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_53646"]
+
+[resource]
+script = ExtResource("2_53646")
+effect_name = "GrassSurface"
+effect_scene = ExtResource("1_5b0in")
+duration_type = 1
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

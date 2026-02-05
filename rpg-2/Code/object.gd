@@ -43,6 +43,10 @@ func play_hit_flash() -> void:
 	tween.tween_property(sprite, "modulate", Color.RED, 0.1)
 	tween.tween_property(sprite, "modulate", Color.WHITE, 0.1)
 
+func take_damage(amount: int):
+	stats.health -= amount # If this line is missing, the health bar never moves!
+	play_hit_flash()
+
 func destroy_object() -> void:
 	# Tell the map we are no longer here
 	var cell = map_manager.world_to_cell(global_position)

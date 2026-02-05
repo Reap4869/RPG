@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://bua1daj6k618o"]
+
+[ext_resource type="Resource" uid="uid://rh11y0d2t4px" path="res://Resources/Buffs/Wet_Buff.tres" id="1_vxno7"]
+[ext_resource type="Resource" uid="uid://grtey4sntoyp" path="res://Resources/VFX/Attacks/Water/SmallWaterImpact.tres" id="2_jwgxk"]
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="2_mr3dt"]
+[ext_resource type="AudioStream" uid="uid://8fcagrqhclyx" path="res://Sound/SFX/EM_FIRE_HOLD_4s.wav" id="3_48x8q"]
+[ext_resource type="Resource" uid="uid://c0084puov4w3f" path="res://Resources/VFX/Attacks/Water/WaterHoldVFX.tres" id="3_gvlqa"]
+[ext_resource type="AudioStream" uid="uid://clx6rwa556fvr" path="res://Sound/SFX/EM_FIRE_IMPACT_01.wav" id="5_m2tsg"]
+[ext_resource type="Resource" uid="uid://bqar6t8grratc" path="res://Resources/VFX/Attacks/Water/SharkWaterProjectile_vfx.tres" id="6_njys7"]
+[ext_resource type="Resource" uid="uid://cw7ysqu0sfnv2" path="res://Resources/Surfaces/WaterSurfaceData.tres" id="8_m2tsg"]
+
+[resource]
+script = ExtResource("2_mr3dt")
+attack_name = "Water Shark"
+attack_desc = "Fast Water Spell"
+stamina_cost = 0.0
+damage_type = 3
+scaling_stat = 1
+attack_range = 3
+has_projectile = true
+buff_to_apply = ExtResource("1_vxno7")
+surface_to_create = ExtResource("8_m2tsg")
+surface_duration = 3
+hold_vfx = ExtResource("3_gvlqa")
+projectile_vfx = ExtResource("6_njys7")
+impact_vfx = ExtResource("2_jwgxk")
+hold_sfx = ExtResource("3_48x8q")
+impact_sfx = ExtResource("5_m2tsg")
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"
