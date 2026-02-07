@@ -1,9 +1,9 @@
 [gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://o3im1p02rm5r"]
 
-[ext_resource type="AudioStream" uid="uid://bq6hjnx2a6lv8" path="res://Sound/SFX/EM_FIRE_CAST_02.wav" id="1_ihrpy"]
+[ext_resource type="AudioStream" uid="uid://bq6hjnx2a6lv8" path="res://Sound/SFX/Fire/EM_FIRE_CAST_02.wav" id="1_ihrpy"]
 [ext_resource type="Resource" uid="uid://cdu844ijx72qd" path="res://Resources/VFX/Attacks/Fire/SmallFireImpact.tres" id="1_p3xmw"]
-[ext_resource type="AudioStream" uid="uid://clx6rwa556fvr" path="res://Sound/SFX/EM_FIRE_IMPACT_01.wav" id="2_0v7lb"]
-[ext_resource type="Resource" uid="uid://ch18aiyryssbv" path="res://Resources/VFX/Attacks/Fire/SmallFireProjectile_vfx.tres" id="2_emms5"]
+[ext_resource type="AudioStream" uid="uid://clx6rwa556fvr" path="res://Sound/SFX/Fire/EM_FIRE_IMPACT_01.wav" id="2_0v7lb"]
+[ext_resource type="Resource" uid="uid://ch18aiyryssbv" path="res://Resources/VFX/Attacks/Fire/SmallFireProjectile.tres" id="2_emms5"]
 [ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="2_v0ed6"]
 [ext_resource type="Resource" uid="uid://cty1yryuaa712" path="res://Resources/VFX/Surfaces/FireSurface_vfx.tres" id="3_emms5"]
 

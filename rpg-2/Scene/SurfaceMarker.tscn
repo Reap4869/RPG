@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://o6o5ag6ejv01"]
+
+[ext_resource type="Script" uid="uid://b4xr5om5avnsf" path="res://Code/surface_marker.gd" id="1_7158w"]
+[ext_resource type="Texture2D" uid="uid://c87daqbadmb6f" path="res://icon.svg" id="2_7e2c8"]
+
+[node name="SpawnMarker" type="Node2D" unique_id=836848771]
+position = Vector2(16, 16)
+script = ExtResource("1_7158w")
+unit_data = null
+is_player = false
+
+[node name="PreviewSprite" type="Sprite2D" parent="." unique_id=215203563]
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("2_7e2c8")

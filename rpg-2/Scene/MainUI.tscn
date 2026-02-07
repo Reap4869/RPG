@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://drimrxwkssmrr" path="res://Code/mainui.gd" id="1_b3bc3"]
 [ext_resource type="Script" uid="uid://kaa5cepvblcj" path="res://Code/unit_infoPanel.gd" id="2_kvsts"]
 [ext_resource type="Script" uid="uid://5uigkwd8eig3" path="res://Code/debugpanel.gd" id="2_txwsu"]
-[ext_resource type="Texture2D" uid="uid://c5345r0khsj5x" path="res://Art/portrait.png" id="3_mtny8"]
+[ext_resource type="Texture2D" uid="uid://1k63byfw7ewi" path="res://Art/RPG_SpriteSheet.png" id="3_mtny8"]
 [ext_resource type="Script" uid="uid://lcklbs8t2wdr" path="res://Code/skill_bar.gd" id="4_a6gju"]
 [ext_resource type="PackedScene" uid="uid://onaotl0oqady" path="res://Scene/CombatLog.tscn" id="4_ht100"]
 
@@ -348,6 +348,7 @@ grow_horizontal = 1
 grow_vertical = 0
 
 [node name="DebugPanel" type="Control" parent="." unique_id=436894585]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -407,6 +408,17 @@ layout_mode = 2
 [node name="Label" type="Label" parent="DebugPanel/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer3" unique_id=157465716]
 layout_mode = 2
 text = "Show Cell Ocupancy"
+
+[node name="HBoxContainer4" type="HBoxContainer" parent="DebugPanel/PanelContainer/MarginContainer/VBoxContainer" unique_id=2029514283]
+layout_mode = 2
+
+[node name="FootstepToggle" type="CheckBox" parent="DebugPanel/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer4" unique_id=1622634008]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Label" type="Label" parent="DebugPanel/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer4" unique_id=1986574620]
+layout_mode = 2
+text = "Footsteps Sounds"
 
 [node name="GMTools" type="CheckBox" parent="." unique_id=1054385126]
 unique_name_in_owner = true

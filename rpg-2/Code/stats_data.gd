@@ -2,6 +2,7 @@ extends Resource
 class_name Stats
 
 var active_buffs: Array = [] # Stores { "resource": BuffResource, "remaining": int }
+var caster_unit: Unit  # Store the person who applied the buff
 
 signal buffs_updated(active_buffs: Array)
 signal request_log(message: String, color: Color)
@@ -69,9 +70,9 @@ var stamina: float = 0.0: set = _on_stamina_set
 var mana: float = 0.0: set = _on_mana_set
 
 @export_group("Base Stats")
-@export var base_max_health: float = 20.0
-@export var base_max_stamina: float = 50.0
-@export var base_max_mana: float = 20.0
+@export var base_max_health: float = 15.0
+@export var base_max_stamina: float = 15.0
+@export var base_max_mana: float = 10.0
 @export var experience: int = 0: set = _on_experience_set
 
 # 0.2 means 20% damage reduction.
@@ -121,16 +122,16 @@ func recalculate_stats() -> void:
 
 	
 	# Recalculate derived health/stamina based on the NEW current attributes
-	current_max_health = base_max_health + (2.0 * current_strength)
-	current_max_stamina = base_max_stamina + (2.0 * current_agility)
-	current_max_mana = base_max_mana + (2.0 * current_intelligence)
+	current_max_health = base_max_health + (5.0 * current_strength)
+	current_max_stamina = base_max_stamina + (5.0 * current_agility)
+	current_max_mana = base_max_mana + (10.0 * current_intelligence)
 
 	# Ensure resources don't exceed new maximums
 	health = health
 	stamina = stamina
 	mana = mana
 
-func add_buff(buff_res: BuffResource, is_graze: bool = false):
+func add_buff(buff_res: BuffResource, is_graze: bool = false, caster: Unit = null):
 	# --- ELEMENTAL INTERACTIONS ---
 	if buff_res.buff_name == "Wet":
 		_remove_buff_by_name("Burn")
@@ -146,18 +147,24 @@ func add_buff(buff_res: BuffResource, is_graze: bool = false):
 	var dur = buff_res.duration
 	if is_graze: dur = floori(dur / 2.0)
 	
-	# Check if buff already exists (Refresh duration)
-	for b in active_buffs:
-		if b.resource.buff_name == buff_res.buff_name:
-			b.remaining = max(b.remaining, dur)
-			return
+	# Check if THIS specific caster already has THIS buff on the target
+	#for b in active_buffs:
+	#	if b.resource.buff_name == buff_res.buff_name and b.get("caster") == caster:
+	#		b.remaining = max(b.remaining, dur)
+	#		return # Refresh and exit
 	
 	# In your stats script, you might not have access to the CombatLog directly,
 	# so we can emit a signal or use a Global call.
 	var msg = buff_res.on_applied_message % character_name
 	_send_to_combat_log(msg, Color.ORANGE_RED if not buff_res.is_positive else Color.CYAN)
 	
-	active_buffs.append({ "resource": buff_res, "remaining": dur })
+	# We now store the caster inside the dictionary
+	active_buffs.append({ 
+		"resource": buff_res, 
+		"remaining": dur,
+		"caster": caster 
+	})
+	
 	print("[BUFF] Added %s for %d turns!" % [buff_res.buff_name, dur])
 	
 	# IMPORTANT: Update stats so +STR or +Agility buffs take effect now
@@ -168,9 +175,10 @@ func apply_turn_start_buffs(victim_unit: Unit, game_ref: Node) -> void:
 	var to_remove = []
 	for b in active_buffs:
 		# Tick Damage logic
-		if b.resource.damage_per_tick > 0:
-			# Now we use the game_ref we just passed in!
-			game_ref._apply_tick_damage(victim_unit, b.resource.damage_per_tick, b.resource.damage_type)
+		if b.resource.damage_per_tick != 0 or b.resource.dice_count > 0:
+			# Safety check: if caster is missing, default to null
+			var buff_caster = b.get("caster", null) 
+			game_ref._apply_tick_damage(victim_unit, b.resource.damage_per_tick, b.resource.damage_type, b.resource, buff_caster)
 		
 		# Duration logic
 		if not b.resource.is_permanent:
@@ -241,6 +249,19 @@ func get_resistance(type: Globals.DamageType) -> float:
 	
 func _send_to_combat_log(msg: String, color: Color):
 	request_log.emit(msg, color)
+	
+func debug_print_buffs() -> void:
+	print("=== DEBUG BUFFS FOR %s ===" % character_name)
+	if active_buffs.is_empty():
+		print("Empty (No active buffs)")
+	else:
+		for i in range(active_buffs.size()):
+			var b = active_buffs[i]
+			var caster_name = b.caster.name if b.get("caster") else "No Caster"
+			print("[%d] Name: %s | Caster: %s | Remaining: %d" % [
+				i, b.resource.buff_name, caster_name, b.remaining
+			])
+	print("===============================")
 # --- Setters ---
 
 func _on_health_set(value: float) -> void:

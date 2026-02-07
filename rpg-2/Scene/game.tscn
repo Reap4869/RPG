@@ -6,7 +6,10 @@
 [ext_resource type="Script" uid="uid://ee020yrkgy" path="res://Code/map_manager.gd" id="2_h8jt7"]
 [ext_resource type="Script" uid="uid://cc1vpy6650fp6" path="res://Code/world.gd" id="2_sagxc"]
 [ext_resource type="Resource" uid="uid://2f1flo6q5gko" path="res://Resources/TestMap.tres" id="2_yjs1f"]
+[ext_resource type="AudioStream" uid="uid://c44o0tgkrjmgf" path="res://Sound/SFX/Footstep1.mp3" id="3_gji41"]
+[ext_resource type="AudioStream" uid="uid://dldmb7mahxbhh" path="res://Sound/SFX/Footstep2.mp3" id="4_5smqc"]
 [ext_resource type="Script" uid="uid://ctarykl2b1wb2" path="res://Code/cell_highlights.gd" id="5_8f6ah"]
+[ext_resource type="AudioStream" uid="uid://cnojelu2vbkuf" path="res://Sound/SFX/Footstep3.mp3" id="5_mo8cs"]
 [ext_resource type="Script" uid="uid://cli37j2rtel3f" path="res://Code/selector.gd" id="5_thj8p"]
 [ext_resource type="Script" uid="uid://bc5qt38uj2tf1" path="res://Code/units_manager.gd" id="6_twwsd"]
 [ext_resource type="Script" uid="uid://ydig1pvwmt0u" path="res://Code/surface_data.gd" id="6_vy0et"]
@@ -21,6 +24,7 @@
 [node name="Game" type="Node2D" unique_id=1683554374]
 script = ExtResource("1_sagxc")
 starting_map = ExtResource("2_yjs1f")
+footstep_sounds = Array[AudioStream]([ExtResource("3_gji41"), ExtResource("4_5smqc"), ExtResource("5_mo8cs")])
 
 [node name="World" type="Node2D" parent="." unique_id=410404395]
 script = ExtResource("2_sagxc")
@@ -63,5 +67,8 @@ script = ExtResource("5_thj8p")
 
 [node name="CombatLog" parent="UI/MainUI" index="2" unique_id=1778548723]
 grow_vertical = 1
+
+[node name="DebugPanel" parent="UI/MainUI" index="3" unique_id=436894585]
+visible = false
 
 [editable path="UI/MainUI"]

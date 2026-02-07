@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://du7b5cnun8p80"]
+
+[ext_resource type="Resource" uid="uid://bnmm20jbq830a" path="res://Resources/VFX/Attacks/Physical/SmallPhysicalHit.tres" id="1_1es7s"]
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="2_1es7s"]
+[ext_resource type="Resource" uid="uid://baewjw836quug" path="res://Resources/VFX/Attacks/Physical/PhysicalHoldVFX.tres" id="2_bp4a7"]
+[ext_resource type="AudioStream" uid="uid://bss7dbr2s2jts" path="res://Sound/SFX/Phys/Bonk.wav" id="2_qgdqt"]
+[ext_resource type="AudioStream" uid="uid://nkujbpqmrqoe" path="res://Sound/SFX/Earth/EM_EARTH_IMPACT_01.wav" id="4_3l0hq"]
+
+[resource]
+script = ExtResource("2_1es7s")
+attack_name = "Staf Hit"
+mana_cost = 0.0
+hold_vfx = ExtResource("2_bp4a7")
+hit_vfx = ExtResource("1_1es7s")
+hold_sfx = ExtResource("4_3l0hq")
+hit_sfx = ExtResource("2_qgdqt")
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

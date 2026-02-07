@@ -13,8 +13,8 @@ enum HitResult { MISS, GRAZE, HIT, CRIT }
 
 @export_group("Costs")
 @export var health_cost: float = 0.0
-@export var stamina_cost: float = 10.0
-@export var mana_cost: float = 0.0
+@export var stamina_cost: float = 20.0
+@export var mana_cost: float = 10.0
 
 @export_group("Damage Logic")
 @export var damage_type: Globals.DamageType = Globals.DamageType.PHYSICAL
@@ -136,24 +136,28 @@ func get_damage_data(attacker_stats: Resource, defender_stats: Resource) -> Arra
 	var target_name = defender_stats.character_name if "character_name" in defender_stats else defender_stats.object_name
 	var result_name = "RESISTED" if (result == HitResult.MISS and category == Globals.AttackCategory.SPELL) else HitResult.keys()[result]
 	
-	print("---------------------------------")
+	print("-------------")
 	print("%s used %s!" % [attacker_name, attack_name])
-	print("It hit %s for %d damage!" % [target_name, roundi(final_damage)])
+	
+	if buff_to_apply and buff_to_apply.is_positive:
+		# If it's a positive buff, we treat the damage value as a heal
+		final_damage = -final_damage 
+		print("It heals %s for %d HP!" % [target_name, abs(roundi(final_damage))])
+	else:
+		print("It hit %s for %d damage!" % [target_name, roundi(final_damage)])
+	
 	print("Type: %s | Roll: %d | %s | It's a %s!" % [Globals.AttackCategory.keys()[category], roundi(roll), ceilings_info, result_name])
 	
-	# Dice string formatting: 2d6 = 6 (2 + 4)
 	var dice_details = str(dice_rolls).replace("[", "").replace("]", "").replace(",", " +")
 	var dice_str = "%dd%s = %d (%s)" % [dice_count, dice_type, dice_sum, dice_details]
 	
-	# Logic for: (STR 15 * 1.0 AttkMult) * 1.0 Rollmult...
 	print("Total: %.1f -> (%s %d * %.1f AttkMult) * %.1f Rollmult = %.1f flat + %s" % [
-		total_pre_resist, stat_label, roundi(stat_bonus), multiplier, multiplier_used, flat_damage, dice_str
+		abs(total_pre_resist), stat_label, roundi(stat_bonus), multiplier, multiplier_used, abs(flat_damage), dice_str
 	])
-	
-	print("Target Resist (%s): %d%% | FINAL DAMAGE: %d" % [Globals.DamageType.keys()[damage_type], resist_pct * 100, roundi(final_damage)])
-	print("---------------------------------")
+	print("-------------------")
 
-	return [maxf(0.0, final_damage), result]
+	return [final_damage, result]
+
 
 
 func _get_scaling_bonus(s: Stats) -> float:

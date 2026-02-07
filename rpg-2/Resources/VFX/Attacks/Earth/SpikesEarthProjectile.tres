@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://7ljyf8s7nbht"]
+
+[ext_resource type="PackedScene" uid="uid://dcq2fx1f14gcb" path="res://Scene/Earth/SpikesEarthProjectileVFX.tscn" id="1_efu80"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_3mgoe"]
+
+[resource]
+script = ExtResource("2_3mgoe")
+effect_name = "EarthSpikes"
+effect_scene = ExtResource("1_efu80")
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

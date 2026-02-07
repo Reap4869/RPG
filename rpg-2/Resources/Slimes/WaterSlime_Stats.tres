@@ -4,9 +4,12 @@
 
 [resource]
 script = ExtResource("1_xgye4")
-character_name = "Slime"
+character_name = "Water Slime"
 race = "Monster"
-base_strength = 2.0
-base_agility = 2.0
-base_intelligence = 2.0
+base_max_health = 10.0
+resistances = Dictionary[int, float]({
+3: 0.2,
+5: 0.2,
+9: -0.2
+})
 metadata/_custom_type_script = "uid://cbjkyqk7ij6cq"

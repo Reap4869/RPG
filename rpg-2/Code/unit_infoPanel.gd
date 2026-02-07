@@ -129,9 +129,10 @@ func _disconnect_signals(stats: Stats) -> void:
 		stats.buffs_updated.disconnect(_update_buff_icons)
 
 func _update_buff_icons(active_buffs: Array) -> void:
-	# Clear old icons
+	# 1. Clear old icons immediately
 	for child in buff_container.get_children():
-		child.queue_free()
+		buff_container.remove_child(child) # Unparent immediately
+		child.queue_free() # Delete later
 	
 	for buff_data in active_buffs:
 		var buff_res = buff_data.resource
@@ -144,7 +145,7 @@ func _update_buff_icons(active_buffs: Array) -> void:
 			icon_rect.texture = buff_res.icon
 		
 		# Styling
-		icon_rect.custom_minimum_size = Vector2(24, 24)
+		icon_rect.custom_minimum_size = Vector2(20, 20)
 		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		

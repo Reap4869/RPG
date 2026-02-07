@@ -23,5 +23,9 @@ enum BuffType {
 @export var stat_modifiers: Dictionary[String, float] = {}
 
 @export_group("Tick Logic")
-@export var damage_per_tick: int = 0
 @export var damage_type: Globals.DamageType = Globals.DamageType.FIRE
+@export var damage_per_tick: int = 0
+@export var dice_count: int = 1
+@export var dice_type: Globals.DieType = Globals.DieType.D6
+@export var scaling_stat: Globals.ScalingStat = Globals.ScalingStat.INTELLIGENCE
+@export var scaling_multiplier: float = 1.0

@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://dj8oifuwjtngs"
+path="res://.godot/imported/EM_ICE_CAST_IMPACT_HARD_01.wav-3c6f498690bb4081ff53ea6afd46d817.sample"
+
+[deps]
+
+source_file="res://Sound/SFX/Ice/Ice - Cast Impact/EM_ICE_CAST_IMPACT_HARD_01.wav"
+dest_files=["res://.godot/imported/EM_ICE_CAST_IMPACT_HARD_01.wav-3c6f498690bb4081ff53ea6afd46d817.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

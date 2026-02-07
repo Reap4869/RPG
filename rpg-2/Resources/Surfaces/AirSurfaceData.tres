@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SurfaceData" format=3 uid="uid://bkjpb4mvb1by0"]
+
+[ext_resource type="Resource" uid="uid://bjsfsakiu8vn8" path="res://Resources/VFX/Surfaces/AirSurface_vfx.tres" id="2_bt73c"]
+[ext_resource type="Script" uid="uid://ydig1pvwmt0u" path="res://Code/surface_data.gd" id="2_hyfnw"]
+
+[resource]
+script = ExtResource("2_hyfnw")
+type = 4
+vfx_template = ExtResource("2_bt73c")
+metadata/_custom_type_script = "uid://ydig1pvwmt0u"

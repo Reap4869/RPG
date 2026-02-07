@@ -64,13 +64,10 @@ func load_map_from_resource(data: MapData) -> void:
 					astar.set_point_weight_scale(cell, 2.0)
 			
 			grid_data[cell] = cell_info
-	# 4. Setup Initial Surfaces from Map Resource
-	if data.has_method("get_initial_surfaces"): # Assuming you add this to MapData
-		for cell in data.initial_surfaces:
-			var res = data.initial_surfaces[cell]
-			# Pass 999 for permanent map surfaces
-			apply_surface_to_cell(cell, res, 999)
-	# 3. Final AStar update
+	# 3. Setup All Surfaces (Resource + Markers)
+	_spawn_initial_surfaces()
+	
+	# 4. Final AStar update
 	astar.update()
 
 func _scan_tilemap_layers(map_root: Node) -> void:
@@ -226,6 +223,26 @@ func _spawn_surface_vfx(cell: Vector2i, vfx_data: VisualEffectData, duration: in
 	vfx.setup(vfx_data, duration) # This now applies the scale!
 	
 	data.surface_vfx_node = vfx
+
+func _spawn_initial_surfaces() -> void:
+	# 1. Handle Surfaces from MapData Resource
+	if current_map_data and current_map_data.has_method("get_initial_surfaces"):
+		for cell in current_map_data.initial_surfaces:
+			var type = current_map_data.initial_surfaces[cell]
+			# Look up the resource object using the enum key
+	
+	# 2. Handle Surfaces from Editor Markers
+	var markers = get_tree().get_nodes_in_group("SurfaceMarkers")
+	for marker in markers:
+		if marker is SurfaceMarker:
+			var cell = world_to_cell(marker.global_position)
+			if marker.surface_type != Globals.SurfaceType.NONE:
+				# Look up the resource object using the marker's enum
+				var res = Globals.SURFACES.get(marker.surface_type)
+				if res:
+					apply_surface_to_cell(cell, res, marker.duration)
+				else:
+					print("Warning: No SurfaceData found in Globals for type ", marker.surface_type)
 
 func apply_surface_gameplay_effect(top_left_cell: Vector2i, unit: Node2D) -> void:
 	var size = unit.data.grid_size

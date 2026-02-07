@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://d1vgjw1kvyno7"
+path="res://.godot/imported/EM_ICE_CAST_SPELL_SOFT_01.wav-e4d2a1757d6f587dab8edf1293b009dc.sample"
+
+[deps]
+
+source_file="res://Sound/SFX/Ice/Ice - Cast Spell/EM_ICE_CAST_SPELL_SOFT_01.wav"
+dest_files=["res://.godot/imported/EM_ICE_CAST_SPELL_SOFT_01.wav-e4d2a1757d6f587dab8edf1293b009dc.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

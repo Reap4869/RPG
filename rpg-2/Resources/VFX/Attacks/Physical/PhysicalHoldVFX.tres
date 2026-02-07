@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://baewjw836quug"]
+
+[ext_resource type="PackedScene" uid="uid://bqxx0y5wiacux" path="res://Scene/Physical/PhysicalHoldVFX.tscn" id="1_3qwel"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_vngsl"]
+
+[resource]
+script = ExtResource("2_vngsl")
+effect_scene = ExtResource("1_3qwel")
+duration_type = 3
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

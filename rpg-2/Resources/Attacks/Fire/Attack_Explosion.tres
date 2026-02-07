@@ -14,9 +14,11 @@
 script = ExtResource("2_n8b57")
 attack_name = "Explosion"
 attack_desc = "Explooooshion"
-stamina_cost = 0.0
+stamina_cost = 40.0
+mana_cost = 40.0
+damage_type = 5
 scaling_stat = 1
-dice_count = 4
+dice_type = 20
 target_type = 1
 attack_range = 5
 aoe_shape = 1

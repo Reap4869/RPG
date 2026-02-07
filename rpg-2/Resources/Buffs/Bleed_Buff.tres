@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BuffResource" format=3 uid="uid://bd0k6ute341tm"]
+
+[ext_resource type="Texture2D" uid="uid://c87daqbadmb6f" path="res://icon.svg" id="1_y20gv"]
+[ext_resource type="Script" uid="uid://d0ybwy8s8axa5" path="res://Code/buff_data.gd" id="2_471bv"]
+
+[resource]
+script = ExtResource("2_471bv")
+buff_name = "Bleed"
+icon = ExtResource("1_y20gv")
+buff_type = 1
+on_applied_message = "%s is Bleeding!"
+on_expired_message = "%s is no longer bleeding."
+damage_type = 2
+scaling_stat = 1
+scaling_multiplier = 0.5
+metadata/_custom_type_script = "uid://d0ybwy8s8axa5"

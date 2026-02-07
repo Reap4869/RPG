@@ -10,5 +10,4 @@ icon = ExtResource("1_ntod0")
 stat_modifiers = Dictionary[String, float]({
 "water_resist": 0.1
 })
-damage_per_tick = 3
 metadata/_custom_type_script = "uid://d0ybwy8s8axa5"

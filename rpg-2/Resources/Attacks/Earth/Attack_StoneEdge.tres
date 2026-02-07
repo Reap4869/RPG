@@ -1,17 +1,26 @@
 [gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://ciyous0mokxps"]
 
 [ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="1_dci8r"]
+[ext_resource type="AudioStream" uid="uid://br1hfbyfq581j" path="res://Sound/SFX/Earth/HitRockTomb.mp3" id="1_ox84q"]
+[ext_resource type="AudioStream" uid="uid://bj22pxd3iog0v" path="res://Sound/SFX/Earth/EM_EARTH_LAUNCH_01.wav" id="2_lkycv"]
+[ext_resource type="Resource" uid="uid://dea4j54on6psk" path="res://Resources/VFX/Attacks/Earth/EarthHoldVFX.tres" id="3_n8mmn"]
+[ext_resource type="AudioStream" uid="uid://nkujbpqmrqoe" path="res://Sound/SFX/Earth/EM_EARTH_IMPACT_01.wav" id="4_c8tha"]
+[ext_resource type="Resource" uid="uid://bm8pvv331moop" path="res://Resources/VFX/Attacks/Earth/StoneEdgeEarthImpact.tres" id="5_7lewu"]
+[ext_resource type="Resource" uid="uid://bfryv3utkk5ct" path="res://Resources/Surfaces/EarthSurfaceData.tres" id="7_bqi0o"]
 
 [resource]
 script = ExtResource("1_dci8r")
 attack_name = "Stone Edge"
 attack_desc = "Stone Spike"
-stamina_cost = 30.0
-mana_cost = 20.0
 damage_type = 4
 scaling_stat = 1
-multiplier = 1.5
-dice_count = 3
-attack_range = 3
-surface_to_create = 3
+attack_range = 2
+surface_to_create = ExtResource("7_bqi0o")
+surface_duration = 3
+hold_vfx = ExtResource("3_n8mmn")
+impact_vfx = ExtResource("5_7lewu")
+hold_sfx = ExtResource("2_lkycv")
+impact_sfx = ExtResource("4_c8tha")
+hit_sfx = ExtResource("1_ox84q")
+screen_shake_type = 1
 metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

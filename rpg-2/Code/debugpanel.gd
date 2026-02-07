@@ -3,6 +3,7 @@ extends Control
 @onready var show_paths: CheckBox = %ShowPaths
 @onready var show_cells: CheckBox = %ShowCells
 @onready var show_ocupancy: CheckBox = %ShowOcupancy
+@onready var footstep_toggle: CheckBox = %FootstepToggle
 
 func _ready() -> void:
 	show_paths.button_pressed = Globals.show_unit_paths
@@ -13,6 +14,12 @@ func _ready() -> void:
 	
 	show_ocupancy.button_pressed = Globals.show_cell_ocupancy
 	show_ocupancy.toggled.connect(_on_show_ocupancy_toggled)
+	
+	footstep_toggle.button_pressed = Globals.play_footstep_sounds
+	footstep_toggle.toggled.connect(_on_footstep_toggled)
+
+func _on_footstep_toggled(value: bool) -> void:
+	Globals.play_footstep_sounds = value
 
 func _on_show_ocupancy_toggled(value: bool) -> void:
 	Globals.show_cell_ocupancy = value

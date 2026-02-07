@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://bm8pvv331moop"]
+
+[ext_resource type="PackedScene" uid="uid://cvl4v2rpownrr" path="res://Scene/Earth/StoneEdgeEarthImpact.tscn" id="1_ox5qe"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_vm2tm"]
+
+[resource]
+script = ExtResource("2_vm2tm")
+effect_scene = ExtResource("1_ox5qe")
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

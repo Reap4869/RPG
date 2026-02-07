@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://bp2kg3ujebehv"]
+
+[ext_resource type="AudioStream" uid="uid://bj22pxd3iog0v" path="res://Sound/SFX/Earth/EM_EARTH_LAUNCH_01.wav" id="1_0rrsa"]
+[ext_resource type="AudioStream" uid="uid://8fcagrqhclyx" path="res://Sound/SFX/Fire/EM_FIRE_HOLD_4s.wav" id="2_1k40x"]
+[ext_resource type="Resource" uid="uid://dea4j54on6psk" path="res://Resources/VFX/Attacks/Earth/EarthHoldVFX.tres" id="2_2kkfs"]
+[ext_resource type="AudioStream" uid="uid://nkujbpqmrqoe" path="res://Sound/SFX/Earth/EM_EARTH_IMPACT_01.wav" id="3_ffwp0"]
+[ext_resource type="Resource" uid="uid://cdhapmsqlh748" path="res://Resources/VFX/Attacks/Earth/SmallEarthImpact.tres" id="4_1k40x"]
+[ext_resource type="Resource" uid="uid://7ljyf8s7nbht" path="res://Resources/VFX/Attacks/Earth/SpikesEarthProjectile.tres" id="5_0rrsa"]
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="7_n4w6r"]
+
+[resource]
+script = ExtResource("7_n4w6r")
+attack_name = "Rock Spikes"
+attack_desc = "Fast Earth Spell"
+damage_type = 4
+scaling_stat = 1
+attack_range = 3
+aoe_shape = 1
+has_projectile = true
+hold_vfx = ExtResource("2_2kkfs")
+projectile_vfx = ExtResource("5_0rrsa")
+impact_vfx = ExtResource("4_1k40x")
+hold_sfx = ExtResource("1_0rrsa")
+projectile_sfx = ExtResource("2_1k40x")
+impact_sfx = ExtResource("3_ffwp0")
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Stats" format=3 uid="uid://detwxx1vx2tvq"]
+
+[ext_resource type="Script" uid="uid://cbjkyqk7ij6cq" path="res://Code/stats_data.gd" id="1_3hoa5"]
+
+[resource]
+script = ExtResource("1_3hoa5")
+character_name = "Espadoña"
+race = "Human"
+background = "Mercenary"
+character_class = "Warrior"
+base_strength = 7.0
+base_agility = 6.0
+metadata/_custom_type_script = "uid://cbjkyqk7ij6cq"

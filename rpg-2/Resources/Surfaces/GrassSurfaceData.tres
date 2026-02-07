@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SurfaceData" format=3 uid="uid://bi62ya4bedfux"]
+
+[ext_resource type="Script" uid="uid://ydig1pvwmt0u" path="res://Code/surface_data.gd" id="2_g15ab"]
+[ext_resource type="Resource" uid="uid://26l4fcssf4jf" path="res://Resources/VFX/Surfaces/GrassSurface_vfx.tres" id="2_nvlfw"]
+
+[resource]
+script = ExtResource("2_g15ab")
+type = 5
+vfx_template = ExtResource("2_nvlfw")
+metadata/_custom_type_script = "uid://ydig1pvwmt0u"

@@ -6,6 +6,8 @@
 script = ExtResource("1_73b86")
 character_name = "Heavy Slime"
 race = "Monster"
-base_agility = 2.0
-base_intelligence = 2.0
+base_max_health = 10.0
+resistances = Dictionary[int, float]({
+2: 0.2
+})
 metadata/_custom_type_script = "uid://cbjkyqk7ij6cq"

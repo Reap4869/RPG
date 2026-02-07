@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Stats" format=3 uid="uid://blde0shofo6hm"]
+
+[ext_resource type="Script" uid="uid://cbjkyqk7ij6cq" path="res://Code/stats_data.gd" id="1_f2s0o"]
+
+[resource]
+script = ExtResource("1_f2s0o")
+character_name = "Teinco"
+race = "Human"
+background = "Urchin"
+character_class = "Rogue"
+base_agility = 7.0
+base_intelligence = 6.0
+metadata/_custom_type_script = "uid://cbjkyqk7ij6cq"

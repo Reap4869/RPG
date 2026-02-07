@@ -4,9 +4,11 @@
 
 [resource]
 script = ExtResource("1_iot8r")
-character_name = "Fire Slime"
+character_name = "Air Slime"
 race = "Monster"
-base_strength = 2.0
-base_agility = 2.0
-base_intelligence = 2.0
+base_max_health = 10.0
+resistances = Dictionary[int, float]({
+6: 0.2,
+9: -0.2
+})
 metadata/_custom_type_script = "uid://cbjkyqk7ij6cq"

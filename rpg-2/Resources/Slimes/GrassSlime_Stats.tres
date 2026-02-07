@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="Stats" format=3 uid="uid://dk7uuyu852voy"]
+
+[ext_resource type="Script" uid="uid://cbjkyqk7ij6cq" path="res://Code/stats_data.gd" id="1_0bnyp"]
+
+[resource]
+script = ExtResource("1_0bnyp")
+character_name = "Grass Slime"
+race = "Monster"
+base_max_health = 10.0
+resistances = Dictionary[int, float]({
+5: -0.2,
+7: 0.2
+})
+metadata/_custom_type_script = "uid://cbjkyqk7ij6cq"

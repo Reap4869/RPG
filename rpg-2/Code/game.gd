@@ -14,7 +14,10 @@ extends Node
 @onready var highlights = $World/CellHighlights
 @onready var main_ui = $UI/MainUI
 @onready var unit_info_panel = $UI/MainUI/UnitInfoPanel
+@export var footstep_sounds: Array[AudioStream] = []
 
+var step_interval: float = 0.22 # Minimum time between sounds
+var last_step_time: float = 0.0
 var occupancy_grid: Dictionary = {}
 var active_unit: Unit = null
 var selected_unit: Unit = null
@@ -45,6 +48,9 @@ func _ready() -> void:
 		print("Warning: No starting_map assigned!")
 
 # --- INPUT HANDLING ---
+func hide_debug_panel() -> void:
+	var panel = $UI/MainUI/DebugPanel
+	panel.visible = !panel.visible
 
 func select_player_unit() -> void:
 	# 1. Find the player unit
@@ -297,7 +303,12 @@ func _apply_attack_damage(attack: AttackResource, attacker: Unit, victim: Node2D
 		label_override = "RESISTED"
 
 	# 2. VFX & Damage Numbers
-	_spawn_damage_number(roundi(damage), victim.global_position, attack.damage_type, result, label_override)
+	if damage < 0:
+		var heal_val = abs(damage)
+		#victim.stats.health += heal_val 
+		_spawn_damage_number(roundi(heal_val), victim.global_position, attack.damage_type, result, "HEAL")
+	else:
+		_spawn_damage_number(roundi(damage), victim.global_position, attack.damage_type, result, label_override)
 	
 	if attack.hit_vfx:
 		var vfx = WORLD_VFX_SCENE.instantiate()
@@ -314,25 +325,32 @@ func _apply_attack_damage(attack: AttackResource, attacker: Unit, victim: Node2D
 	# 4. Apply Health Change (Works for Units and Objects)
 	if victim.has_method("take_damage"):
 		victim.take_damage(damage)
-	
+		
 	# 5. Restore Detailed Combat Log (From Old Version)
 	var type_color = Globals.DAMAGE_COLORS.get(attack.damage_type, Color.WHITE)
 	var prefix = ""
 	match result:
 		attack.HitResult.GRAZE: prefix = "GRAZE! "
 		attack.HitResult.CRIT: prefix = "CRITICAL HIT! "
-
-	var main_msg = "%s%s used %s! %s takes" % [prefix, attacker.name, attack.attack_name, victim.name]
-	var log_node = get_tree().get_first_node_in_group("CombatLog")
-	if log_node:
-		# Using 'damage' from data[0] and the type_color
-		log_node.add_combat_entry(main_msg, str(roundi(damage)), type_color)
+	if damage < 0:
+		type_color = Color.GREEN 
+		var heal_msg = "%s%s used %s! %s heals for" % [prefix, attacker.name, attack.attack_name, victim.name]
+		var log_node = get_tree().get_first_node_in_group("CombatLog")
+		if log_node:
+			# Changed "damage" to "HP"
+			log_node.add_combat_entry(heal_msg, str(abs(roundi(damage))) + " HP", type_color)
+	else:
+		var main_msg = "%s%s used %s! %s takes" % [prefix, attacker.name, attack.attack_name, victim.name]
+		var log_node = get_tree().get_first_node_in_group("CombatLog")
+		if log_node:
+			# Using 'damage' from data[0] and the type_color
+			log_node.add_combat_entry(main_msg, str(roundi(damage)), type_color)
 
 	# 6. Apply Buffs (Restoring the Graze Duration penalty)
 	if attack.buff_to_apply:
 		var is_graze = (result == attack.HitResult.GRAZE)
 		if victim.stats.has_method("add_buff"):
-			victim.stats.add_buff(attack.buff_to_apply, is_graze)
+			victim.stats.add_buff(attack.buff_to_apply, is_graze, attacker)
 
 	# 7. Death Check
 	if victim.stats.health <= 0:
@@ -341,24 +359,75 @@ func _apply_attack_damage(attack: AttackResource, attacker: Unit, victim: Node2D
 		else:
 			_handle_object_death(victim)
 
-func _apply_tick_damage(victim: Unit, amount: int, type: Globals.DamageType) -> void:
-	# Calculate resistance first
-	var resist_pct = victim.stats.get_resistance(type)
-	var final_amount = roundi(amount * (1.0 - resist_pct))
+func _apply_tick_damage(victim: Unit, amount: int, type: Globals.DamageType, buff_res: BuffResource = null, caster: Unit = null) -> void:
+	var base_amount = float(amount)
+	var dice_sum = 0
+	var stat_val = 0.0
+	var scaling_info = "None"
 	
-	print("[TICK DMG] %s takes %d %s damage (Resisted: %d%%)" % [victim.name, final_amount, Globals.DamageType.keys()[type], resist_pct * 100])
-	
-	# CRITICAL FIX: Ensure we actually subtract the health!
-	victim.stats.health -= final_amount
-	
-	_spawn_damage_number(final_amount, victim.global_position, type, AttackResource.HitResult.HIT)
-	
-	if victim.has_method("play_hit_flash"):
-		victim.play_hit_flash()
+	if buff_res:
+		# 1. Dice Logic
+		var dice_rolls = []
+		for i in range(buff_res.dice_count):
+			var r = Globals.roll(buff_res.dice_type)
+			dice_rolls.append(r)
+			dice_sum += r
 		
-	if victim.stats.health <= 0:
-		_handle_unit_death(victim)
+		# 2. Scaling Logic (Only if caster exists and isn't NONE)
+		if caster and buff_res.scaling_stat != Globals.ScalingStat.NONE:
+			var source_stats = caster.stats
+			match buff_res.scaling_stat:
+				Globals.ScalingStat.STRENGTH: 
+					stat_val = source_stats.current_strength
+					scaling_info = "STR"
+				Globals.ScalingStat.INTELLIGENCE: 
+					stat_val = source_stats.current_intelligence
+					scaling_info = "INT"
+				Globals.ScalingStat.AGILITY: 
+					stat_val = source_stats.current_agility
+					scaling_info = "AGI"
+		
+		# 3. Calculate Final Amount
+		var stat_bonus = stat_val * buff_res.scaling_multiplier
+		var total_tick = base_amount + dice_sum + stat_bonus
+		
+		# IMPORTANT: If the buff is positive, it should be healing (negative damage)
+		var final_amount_raw = total_tick
+		if buff_res.is_positive:
+			final_amount_raw = -total_tick # Flip to negative for healing
+		
+		# 4. Resistance
+		var resist_pct = victim.stats.get_resistance(type)
+		var final_amount = roundi(final_amount_raw * (1.0 - resist_pct))
+		
+		# --- EXPANDED CONSOLE LOG ---
+		print("--- TICK LOG: %s ---" % buff_res.buff_name)
+		var math_str = "(Base %d + Dice %d + %s %.1f)" % [base_amount, dice_sum, scaling_info, stat_bonus]
+		if buff_res.is_positive:
+			print("%s Result: +%d HP (Healing)" % [math_str, abs(final_amount)])
+		else:
+			print("%s Result: -%d DMG (Damage)" % [math_str, final_amount])
+		print("-------------------------")
 
+		# 5. Apply to Health and UI
+		_process_tick_effects(victim, final_amount, type)
+
+func _process_tick_effects(victim: Unit, final_amount: int, type: Globals.DamageType):
+	var log_node = get_tree().get_first_node_in_group("CombatLog")
+	if final_amount < 0:
+		var heal_val = abs(final_amount)
+		victim.stats.health += heal_val
+		if log_node:
+			log_node.add_combat_entry("%s heals for" % victim.name, str(heal_val) + " HP", Color.GREEN)
+		_spawn_damage_number(heal_val, victim.global_position, type, AttackResource.HitResult.HIT, "HEAL")
+	else:
+		victim.stats.health -= final_amount
+		if log_node:
+			log_node.add_combat_entry("%s takes" % victim.name, str(final_amount) + " damage", Globals.DAMAGE_COLORS.get(type, Color.WHITE))
+		_spawn_damage_number(final_amount, victim.global_position, type, AttackResource.HitResult.HIT)
+		if victim.has_method("play_hit_flash"): victim.play_hit_flash()
+		if victim.stats.health <= 0:
+			_handle_unit_death(victim)
 # --- SELECTION & HIGHLIGHTS ---
 
 func _handle_selection(cell: Vector2i) -> void:
@@ -509,6 +578,22 @@ func _handle_movement(target_cell: Vector2i) -> void:
 func _on_unit_stepped_on_cell(cell: Vector2i, unit: Unit) -> void:
 	# This uses the MapManager function we updated earlier to handle large units
 	map_manager.apply_surface_gameplay_effect(cell, unit)
+	
+	# 2. Handle Sound Logic
+	if Globals.play_footstep_sounds and not footstep_sounds.is_empty():
+		var now = Time.get_ticks_msec() / 1000.0
+		
+		if now - last_step_time >= step_interval:
+			_play_random_footstep()
+			last_step_time = now
+
+func _play_random_footstep() -> void:
+	# Pick a random sound from your list of 3
+	var random_index = randi() % footstep_sounds.size()
+	var sound_to_play = footstep_sounds[random_index]
+	
+	# Use the SoundManager we built earlier
+	SoundManager.play_sfx(sound_to_play)
 
 func _on_unit_movement_finished(unit: Unit, final_cell: Vector2i) -> void:
 	# Clean up the signal connection
@@ -840,7 +925,9 @@ func _spawn_damage_number(value: int, pos: Vector2, type: Globals.DamageType, re
 	var label = Label.new() # Create the node directly
 	add_child(label)
 	
-	var display_text = text_override if text_override != "" else str(value)
+	var is_healing = (text_override == "HEAL")
+	# If healing, we want "+13 HP". If damage, just "13"
+	var display_text = "+" + str(value) + " HP" if is_healing else str(value)
 	
 	# Setup styling
 	label.text = display_text
@@ -851,7 +938,11 @@ func _spawn_damage_number(value: int, pos: Vector2, type: Globals.DamageType, re
 	
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.z_index = 100 
-	label.modulate = Globals.DAMAGE_COLORS.get(type, Color.WHITE)
+	
+	if is_healing:
+		label.modulate = Color.GREEN
+	else:
+		label.modulate = Globals.DAMAGE_COLORS.get(type, Color.WHITE)
 	
 	# If it's a CRIT, make it bigger!
 	if result == AttackResource.HitResult.CRIT:
@@ -870,8 +961,25 @@ func _spawn_damage_number(value: int, pos: Vector2, type: Globals.DamageType, re
 	tween.tween_property(label, "modulate:a", 0.0, 0.6).set_delay(0.8)
 	
 	tween.finished.connect(label.queue_free)
-# --- INPUT OVERRIDE (Fixing Space Bar) ---
+# --- SKILL LOGIC  ---
 
+func _execute_sanguine_siphon(attacker: Unit, victim: Unit):
+	# 1. Perform the standard attack logic first
+	# (Assuming you have a variable 'siphon_attack_res')
+	_apply_attack_damage(siphon_attack_res, attacker, victim)
+	
+	# 2. Check if the victim is bleeding
+	if victim.stats._has_buff("Bleed"):
+		# Heal Attacker for 5 HP and 5 Stamina
+		attacker.stats.health += 5
+		attacker.stats.stamina += 5
+		
+		# Feedback
+		_spawn_damage_number(5, attacker.global_position, Globals.DamageType.PHYSICAL, AttackResource.HitResult.HIT, "HEAL")
+		_send_to_log("%s siphons life from the bleeding wound!" % attacker.name, Color.CRIMSON)
+
+
+# --- INPUT OVERRIDE (Fixing Space Bar) ---
 func _input(event):
 	if event.is_action_pressed("ui_accept"): 
 		var mouse_cell = selector.current_cell

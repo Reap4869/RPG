@@ -92,6 +92,7 @@ func _process(delta: float) -> void:
 	if global_position.distance_to(target_pos) < 0.1:
 		# --- NEW: Trigger surface effect for the cell we just reached ---
 		var reached_cell = map_manager.world_to_cell(target_pos)
+		# --- TRIGGER SOUNDS AND EFFECTS ---
 		cell_entered.emit(reached_cell)
 		
 		path_index += 1

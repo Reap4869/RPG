@@ -6,6 +6,8 @@ var gm_mode: bool = false
 var show_unit_paths := true
 var show_cell_outlines := true
 var show_cell_ocupancy := false
+var play_footstep_sounds: bool = true
+
 
 # --- GAMEPLAY CONSTANTS ---
 const BASE_MOVE_COST = 20
@@ -24,6 +26,8 @@ enum DieType { D4 = 4, D6 = 6, D8 = 8, D10 = 10, D12 = 12, D20 = 20 }
 
 enum AttackCategory { PHYSICAL, SPELL }
 
+enum ScalingStat { NONE, STRENGTH, INTELLIGENCE, AGILITY }
+
 enum DamageType { 
 	NONE,
 	RAW,
@@ -41,18 +45,18 @@ enum DamageType {
 	}
 
 const DAMAGE_COLORS = {
-	DamageType.RAW: Color.GOLD,
-	DamageType.PHYSICAL: Color.WHITE,
+	DamageType.RAW: Color.WHITE,
+	DamageType.PHYSICAL: Color.DIM_GRAY,
 	DamageType.WATER: Color.DEEP_SKY_BLUE,
 	DamageType.EARTH: Color.SADDLE_BROWN,
 	DamageType.FIRE: Color.ORANGE,
 	DamageType.AIR: Color.LIGHT_CYAN,
-	DamageType.GRASS: Color.WHITE,
-	DamageType.POISON: Color.WHITE,
-	DamageType.ELECTRIC: Color.WHITE,
-	DamageType.DARK: Color.WHITE,
-	DamageType.LOVE: Color.WHITE,
-	DamageType.ICE: Color.WHITE,
+	DamageType.GRASS: Color.WEB_GREEN,
+	DamageType.POISON: Color.REBECCA_PURPLE,
+	DamageType.ELECTRIC: Color.GOLDENROD,
+	DamageType.DARK: Color.MIDNIGHT_BLUE,
+	DamageType.LOVE: Color.HOT_PINK,
+	DamageType.ICE: Color.LIGHT_SKY_BLUE,
 	}
 
 enum AreaShape { SQUARE, DIAMOND, CIRCLE }

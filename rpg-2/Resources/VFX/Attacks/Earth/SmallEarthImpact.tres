@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://cdhapmsqlh748"]
+
+[ext_resource type="PackedScene" uid="uid://d1jxavi0c5x35" path="res://Scene/Earth/SmallEarthImpact.tscn" id="1_8eorx"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_gb8tn"]
+
+[resource]
+script = ExtResource("2_gb8tn")
+effect_name = "Fireball Explosion"
+effect_scene = ExtResource("1_8eorx")
+visual_scale = 2.0
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

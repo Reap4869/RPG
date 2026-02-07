@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://ba8bodtw35mwo"]
+
+[ext_resource type="PackedScene" uid="uid://cngm2ylijiyq" path="res://Scene/Physical/SlashPhysicalImpact.tscn" id="1_ixa6k"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_g8hdw"]
+
+[resource]
+script = ExtResource("2_g8hdw")
+effect_scene = ExtResource("1_ixa6k")
+visual_scale = 2.0
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"

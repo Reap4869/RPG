@@ -7,6 +7,5 @@ script = ExtResource("1_c14h0")
 buff_name = "Wet"
 on_applied_message = "%s is Wet!"
 on_expired_message = "%s is no longer Wet."
-damage_per_tick = 3
 damage_type = 3
 metadata/_custom_type_script = "uid://d0ybwy8s8axa5"

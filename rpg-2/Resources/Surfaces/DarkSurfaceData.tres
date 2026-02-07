@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SurfaceData" format=3 uid="uid://bgux4nynd2mrm"]
+
+[ext_resource type="Script" uid="uid://ydig1pvwmt0u" path="res://Code/surface_data.gd" id="2_7wlre"]
+[ext_resource type="Resource" uid="uid://i1pixn050k2" path="res://Resources/VFX/Surfaces/DarkSurface_vfx.tres" id="2_51yi1"]
+
+[resource]
+script = ExtResource("2_7wlre")
+type = 8
+vfx_template = ExtResource("2_51yi1")
+metadata/_custom_type_script = "uid://ydig1pvwmt0u"

@@ -21,7 +21,7 @@ func make_decision(unit: Unit, game: Node, map_manager: MapManager) -> void:
 		var p_cell = map_manager.world_to_cell(target_player.global_position)
 	
 		# Pass the target cell AND the unit (the slime)
-		game._execute_attack_at_cell(p_cell, unit) 
+		game._execute_multi_target_attack(p_cell, unit) 
 	
 		decision_completed.emit()
 		return

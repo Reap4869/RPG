@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="VisualEffectData" format=3 uid="uid://dea4j54on6psk"]
+
+[ext_resource type="PackedScene" uid="uid://cf1qv6rcswsq5" path="res://Scene/Earth/EarthHoldVFX.tscn" id="1_ws7yw"]
+[ext_resource type="Script" uid="uid://3q5yaxwkyks8" path="res://Code/vfx_data.gd" id="2_yyrj6"]
+
+[resource]
+script = ExtResource("2_yyrj6")
+effect_scene = ExtResource("1_ws7yw")
+duration_type = 3
+metadata/_custom_type_script = "uid://3q5yaxwkyks8"
