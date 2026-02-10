@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://cn6t83j01um47"]
+
+[ext_resource type="Resource" uid="uid://bd0k6ute341tm" path="res://Resources/Buffs/Bleed_Buff.tres" id="1_kgyim"]
+[ext_resource type="AudioStream" uid="uid://bss7dbr2s2jts" path="res://Sound/SFX/Phys/Bonk.wav" id="2_qh4pm"]
+[ext_resource type="Resource" uid="uid://bnmm20jbq830a" path="res://Resources/VFX/Attacks/Physical/SmallPhysicalHit.tres" id="3_8yvhw"]
+[ext_resource type="AudioStream" uid="uid://nkujbpqmrqoe" path="res://Sound/SFX/Earth/EM_EARTH_IMPACT_01.wav" id="4_081f5"]
+[ext_resource type="Resource" uid="uid://baewjw836quug" path="res://Resources/VFX/Attacks/Physical/PhysicalHoldVFX.tres" id="5_s7y2b"]
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="6_r3nh7"]
+[ext_resource type="Script" uid="uid://dkpoqy48nqxpu" path="res://Skills/LeechBite.gd" id="7_qh4pm"]
+
+[resource]
+script = ExtResource("6_r3nh7")
+attack_name = "Leech Bite"
+attack_desc = "Applys Bleed"
+mana_cost = 0.0
+skill_script = ExtResource("7_qh4pm")
+buff_to_apply = ExtResource("1_kgyim")
+hold_vfx = ExtResource("5_s7y2b")
+hit_vfx = ExtResource("3_8yvhw")
+hold_sfx = ExtResource("4_081f5")
+hit_sfx = ExtResource("2_qh4pm")
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

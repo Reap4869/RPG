@@ -17,7 +17,6 @@ attack_desc = "Explooooshion"
 stamina_cost = 40.0
 mana_cost = 40.0
 damage_type = 5
-scaling_stat = 1
 dice_type = 20
 target_type = 1
 attack_range = 5

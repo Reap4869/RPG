@@ -3,7 +3,6 @@
 [ext_resource type="Script" uid="uid://drimrxwkssmrr" path="res://Code/mainui.gd" id="1_b3bc3"]
 [ext_resource type="Script" uid="uid://kaa5cepvblcj" path="res://Code/unit_infoPanel.gd" id="2_kvsts"]
 [ext_resource type="Script" uid="uid://5uigkwd8eig3" path="res://Code/debugpanel.gd" id="2_txwsu"]
-[ext_resource type="Texture2D" uid="uid://1k63byfw7ewi" path="res://Art/RPG_SpriteSheet.png" id="3_mtny8"]
 [ext_resource type="Script" uid="uid://lcklbs8t2wdr" path="res://Code/skill_bar.gd" id="4_a6gju"]
 [ext_resource type="PackedScene" uid="uid://onaotl0oqady" path="res://Scene/CombatLog.tscn" id="4_ht100"]
 
@@ -92,16 +91,33 @@ layout_mode = 2
 [node name="VBoxContainer" type="VBoxContainer" parent="UnitInfoPanel/PanelContainer/MarginContainer" unique_id=2105908340]
 layout_mode = 2
 
-[node name="BuffContainer" type="HBoxContainer" parent="UnitInfoPanel/PanelContainer/MarginContainer/VBoxContainer" unique_id=1620792378]
-unique_name_in_owner = true
+[node name="HBoxContainer2" type="HBoxContainer" parent="UnitInfoPanel/PanelContainer/MarginContainer/VBoxContainer" unique_id=1983242523]
 layout_mode = 2
 
-[node name="PanelContainer" type="PanelContainer" parent="UnitInfoPanel/PanelContainer/MarginContainer/VBoxContainer/BuffContainer" unique_id=1645232807]
+[node name="BuffContainer" type="HBoxContainer" parent="UnitInfoPanel/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer2" unique_id=1620792378]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PanelContainer" type="PanelContainer" parent="UnitInfoPanel/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer2/BuffContainer" unique_id=1645232807]
 custom_minimum_size = Vector2(10, 10)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_kog0a")
 
-[node name="MarginContainer" type="MarginContainer" parent="UnitInfoPanel/PanelContainer/MarginContainer/VBoxContainer/BuffContainer/PanelContainer" unique_id=1599614442]
+[node name="MarginContainer" type="MarginContainer" parent="UnitInfoPanel/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer2/BuffContainer/PanelContainer" unique_id=1599614442]
+layout_mode = 2
+
+[node name="ChargeContainer" type="HBoxContainer" parent="UnitInfoPanel/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer2" unique_id=781724913]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 8
+
+[node name="PanelContainer2" type="PanelContainer" parent="UnitInfoPanel/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer2/ChargeContainer" unique_id=1973438949]
+custom_minimum_size = Vector2(10, 10)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_kog0a")
+
+[node name="MarginContainer" type="MarginContainer" parent="UnitInfoPanel/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer2/ChargeContainer/PanelContainer2" unique_id=1422372662]
 layout_mode = 2
 
 [node name="PanelContainer" type="PanelContainer" parent="UnitInfoPanel/PanelContainer/MarginContainer/VBoxContainer" unique_id=1217162307]
@@ -162,7 +178,6 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_ht100")
 [node name="PortraitIcon" type="TextureRect" parent="UnitInfoPanel/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PortraitContainer/MarginContainer/Portrait/PanelContainer" unique_id=146377351]
 unique_name_in_owner = true
 layout_mode = 2
-texture = ExtResource("3_mtny8")
 stretch_mode = 2
 
 [node name="HealthBar" type="ProgressBar" parent="UnitInfoPanel/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/PortraitContainer/MarginContainer/Portrait" unique_id=2042550275]

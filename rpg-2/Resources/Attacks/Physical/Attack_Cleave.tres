@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://dkwxd61v8qpiu"]
+
+[ext_resource type="AudioStream" uid="uid://bss7dbr2s2jts" path="res://Sound/SFX/Phys/Bonk.wav" id="1_nn2tr"]
+[ext_resource type="Resource" uid="uid://bnmm20jbq830a" path="res://Resources/VFX/Attacks/Physical/SmallPhysicalHit.tres" id="2_1s1rr"]
+[ext_resource type="AudioStream" uid="uid://nkujbpqmrqoe" path="res://Sound/SFX/Earth/EM_EARTH_IMPACT_01.wav" id="3_rkt7o"]
+[ext_resource type="Resource" uid="uid://baewjw836quug" path="res://Resources/VFX/Attacks/Physical/PhysicalHoldVFX.tres" id="4_64dc1"]
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="5_lksr5"]
+[ext_resource type="Script" uid="uid://cstq4fihx5suv" path="res://Skills/Cleave.gd" id="6_1s1rr"]
+
+[resource]
+script = ExtResource("5_lksr5")
+attack_name = "Cleave"
+attack_desc = "Cleave"
+mana_cost = 0.0
+target_type = 1
+aoe_shape = 3
+aoe_range = 1
+skill_script = ExtResource("6_1s1rr")
+hold_vfx = ExtResource("4_64dc1")
+hit_vfx = ExtResource("2_1s1rr")
+hold_sfx = ExtResource("3_rkt7o")
+hit_sfx = ExtResource("1_nn2tr")
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

@@ -2,7 +2,6 @@ extends Resource
 class_name AttackResource
 
 enum TargetType { SINGLE, AOE, SELF }
-enum ScalingStat { STRENGTH, INTELLIGENCE, AGILITY }
 enum HitResult { MISS, GRAZE, HIT, CRIT }
 
 @export_group("Identity")
@@ -15,10 +14,13 @@ enum HitResult { MISS, GRAZE, HIT, CRIT }
 @export var health_cost: float = 0.0
 @export var stamina_cost: float = 20.0
 @export var mana_cost: float = 10.0
+@export var cooldown_turns: int = 0
+@export var requires_charge: bool = false
+@export var charge_type_needed: String = "Arcane"
 
 @export_group("Damage Logic")
 @export var damage_type: Globals.DamageType = Globals.DamageType.PHYSICAL
-@export var scaling_stat: ScalingStat = ScalingStat.STRENGTH
+@export var scaling_stat: Globals.ScalingStat = Globals.ScalingStat.STRENGTH
 @export var multiplier: float = 1.0 # The "2x" from your formula
 @export var dice_type: Globals.DieType = Globals.DieType.D6
 @export var dice_count: int = 2 # Allow for 2d8, etc.
@@ -33,6 +35,7 @@ enum HitResult { MISS, GRAZE, HIT, CRIT }
 @export var aoe_range: int = 0 # If SINGLE, we just leave this at 0
 @export var has_projectile: bool = false
 @export var projectile_speed: float = 200.0
+@export var is_healing: bool = false
 
 @export_group("Hit Roll Logic")
 @export var accuracy_bonus: float = 0.0 # Attack-specific bonus/penalty
@@ -41,6 +44,8 @@ enum HitResult { MISS, GRAZE, HIT, CRIT }
 
 @export_group("Effects")
 @export var buff_to_apply: BuffResource # Optional buff resource
+@export var skill_script: GDScript # Drag and drop
+@export var knockback_distance: int = 0
 @export var surface_to_create: SurfaceData
 @export var surface_duration: int = 0 # How many turns it lasts
 
@@ -112,9 +117,9 @@ func get_damage_data(attacker_stats: Resource, defender_stats: Resource) -> Arra
 
 	# --- 2. SHARED DAMAGE FORMULA ---
 	var stat_bonus = _get_scaling_bonus(attacker_stats)
-	var stat_label = ScalingStat.keys()[scaling_stat].to_upper() # Gets "STRENGTH", "AGILITY", etc.
+	var stat_label = Globals.ScalingStat.keys()[scaling_stat].to_upper() # Gets "STRENGTH", "AGILITY", etc.
 	# Note: using 'multiplier' (from resource) * 'multiplier_used' (from roll)
-	var flat_damage = (stat_bonus * multiplier) * multiplier_used
+	var flat_damage = (stat_bonus * multiplier) #Flat dmg is static * multiplier_used
 	
 	# Dice Logic with Breakdown
 	var dice_rolls = []
@@ -130,41 +135,39 @@ func get_damage_data(attacker_stats: Resource, defender_stats: Resource) -> Arra
 	# Resistances (Fire, Water, etc.)
 	var resist_pct = defender_stats.get_resistance(damage_type)
 	var final_damage = total_pre_resist * (1.0 - resist_pct)
-
-	# --- 3. CONSOLE LOGGING ---
-	var attacker_name = attacker_stats.character_name if "character_name" in attacker_stats else "Attacker"
-	var target_name = defender_stats.character_name if "character_name" in defender_stats else defender_stats.object_name
+	
+	# 3. IF HEALING: Flip the entire result to negative
+	if is_healing:
+		final_damage = -final_damage
+	
+	# --- 4. UPDATED CONSOLE LOGGING ---
+	#var attacker_name = attacker_stats.character_name if "character_name" in attacker_stats else "Attacker"
+	#var target_name = defender_stats.character_name if "character_name" in defender_stats else defender_stats.object_name
 	var result_name = "RESISTED" if (result == HitResult.MISS and category == Globals.AttackCategory.SPELL) else HitResult.keys()[result]
 	
-	print("-------------")
-	print("%s used %s!" % [attacker_name, attack_name])
-	
-	if buff_to_apply and buff_to_apply.is_positive:
-		# If it's a positive buff, we treat the damage value as a heal
-		final_damage = -final_damage 
-		print("It heals %s for %d HP!" % [target_name, abs(roundi(final_damage))])
-	else:
-		print("It hit %s for %d damage!" % [target_name, roundi(final_damage)])
-	
-	print("Type: %s | Roll: %d | %s | It's a %s!" % [Globals.AttackCategory.keys()[category], roundi(roll), ceilings_info, result_name])
-	
+	print("--- [COMBAT: %s] ---" % attack_name.to_upper())
+	print("Result: %s (Roll: %d | %s)" % [result_name, roundi(roll), ceilings_info])
+
 	var dice_details = str(dice_rolls).replace("[", "").replace("]", "").replace(",", " +")
-	var dice_str = "%dd%s = %d (%s)" % [dice_count, dice_type, dice_sum, dice_details]
-	
-	print("Total: %.1f -> (%s %d * %.1f AttkMult) * %.1f Rollmult = %.1f flat + %s" % [
-		abs(total_pre_resist), stat_label, roundi(stat_bonus), multiplier, multiplier_used, abs(flat_damage), dice_str
-	])
+	var dice_math_str = "(%s) * %.1fx" % [dice_details, multiplier_used]
+
+	print("Base Stat: %s (%d) * %.1f = %.1f" % [stat_label, roundi(stat_bonus), multiplier, flat_damage])
+	print("Dice Roll: %dd%s -> %s = %.1f" % [dice_count, dice_type, dice_math_str, final_dice_damage])
+
+	if resist_pct != 0:
+		print("Resisted: -%d%% damage" % roundi(resist_pct * 100))
+
+	var final_word = "HEAL" if final_damage < 0 else "TOTAL"
+	print(">> %s: %d" % [final_word, abs(roundi(final_damage))])
 	print("-------------------")
 
 	return [final_damage, result]
 
-
-
 func _get_scaling_bonus(s: Stats) -> float:
 	match scaling_stat:
-		ScalingStat.STRENGTH: return s.current_strength
-		ScalingStat.INTELLIGENCE: return s.current_intelligence
-		ScalingStat.AGILITY: return s.current_agility
+		Globals.ScalingStat.STRENGTH: return s.current_strength
+		Globals.ScalingStat.INTELLIGENCE: return s.current_intelligence
+		Globals.ScalingStat.AGILITY: return s.current_agility
 	return 0.0
 
 func _get_spell_result(attacker: Resource, defender: Resource) -> Array:

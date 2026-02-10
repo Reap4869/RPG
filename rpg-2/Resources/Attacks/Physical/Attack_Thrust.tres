@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://dihxjlju33eyw"]
+
+[ext_resource type="AudioStream" uid="uid://bss7dbr2s2jts" path="res://Sound/SFX/Phys/Bonk.wav" id="1_2rgj8"]
+[ext_resource type="Resource" uid="uid://bnmm20jbq830a" path="res://Resources/VFX/Attacks/Physical/SmallPhysicalHit.tres" id="2_88ipd"]
+[ext_resource type="AudioStream" uid="uid://nkujbpqmrqoe" path="res://Sound/SFX/Earth/EM_EARTH_IMPACT_01.wav" id="3_7kp1h"]
+[ext_resource type="Resource" uid="uid://baewjw836quug" path="res://Resources/VFX/Attacks/Physical/PhysicalHoldVFX.tres" id="4_opv4v"]
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="5_hbuol"]
+[ext_resource type="Script" uid="uid://cstq4fihx5suv" path="res://Skills/Cleave.gd" id="6_qkswq"]
+
+[resource]
+script = ExtResource("5_hbuol")
+attack_name = "Thrust"
+attack_desc = "Thrust"
+mana_cost = 0.0
+target_type = 1
+aoe_shape = 2
+aoe_range = 2
+skill_script = ExtResource("6_qkswq")
+hold_vfx = ExtResource("4_opv4v")
+hit_vfx = ExtResource("2_88ipd")
+hold_sfx = ExtResource("3_7kp1h")
+hit_sfx = ExtResource("1_2rgj8")
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

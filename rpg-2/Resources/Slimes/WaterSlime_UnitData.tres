@@ -1,9 +1,9 @@
 [gd_resource type="Resource" script_class="UnitData" format=3 uid="uid://dd300ds4ygcuq"]
 
-[ext_resource type="Resource" uid="uid://cdtqcevwqes8r" path="res://Resources/Slimes/Slime_Ai.tres" id="1_egdx6"]
+[ext_resource type="Resource" uid="uid://cxo08lai1sy3q" path="res://Resources/Slimes/SlimeRanged_Ai.tres" id="1_6xikb"]
 [ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="2_6xikb"]
 [ext_resource type="Resource" uid="uid://ip56bamlye1p" path="res://Resources/Attacks/Physical/Attack_BodySlam.tres" id="3_g4gd4"]
-[ext_resource type="Resource" uid="uid://bua1daj6k618o" path="res://Resources/Attacks/Water/Attack_WaterShark.tres" id="4_6xikb"]
+[ext_resource type="Resource" uid="uid://h5or1ekvnsv6" path="res://Resources/Attacks/Water/Attack_Waterbolt.tres" id="4_6xikb"]
 [ext_resource type="Resource" uid="uid://brf8svemwkxhm" path="res://Resources/Slimes/WaterSlime_Stats.tres" id="5_g4gd4"]
 [ext_resource type="Script" uid="uid://caug8a8g82wya" path="res://Code/unit_data.gd" id="5_o6hhc"]
 [ext_resource type="Texture2D" uid="uid://1k63byfw7ewi" path="res://Art/RPG_SpriteSheet.png" id="6_xaqlv"]
@@ -11,7 +11,7 @@
 [resource]
 script = ExtResource("5_o6hhc")
 sprite_sheet = ExtResource("6_xaqlv")
-ai_behavior = ExtResource("1_egdx6")
+ai_behavior = ExtResource("1_6xikb")
 world_region = Rect2(32, 96, 32, 32)
 portrait_region = Rect2(32, 96, 32, 32)
 base_stats = ExtResource("5_g4gd4")

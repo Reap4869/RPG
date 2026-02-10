@@ -1,14 +1,21 @@
-[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://u4p33kae4q55"]
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://dn1pwn12u8mb7"]
 
-[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="1_pprh4"]
+[ext_resource type="AudioStream" uid="uid://bss7dbr2s2jts" path="res://Sound/SFX/Phys/Bonk.wav" id="1_il2gv"]
+[ext_resource type="Resource" uid="uid://bnmm20jbq830a" path="res://Resources/VFX/Attacks/Physical/SmallPhysicalHit.tres" id="2_caqc7"]
+[ext_resource type="AudioStream" uid="uid://nkujbpqmrqoe" path="res://Sound/SFX/Earth/EM_EARTH_IMPACT_01.wav" id="3_mbflv"]
+[ext_resource type="Resource" uid="uid://baewjw836quug" path="res://Resources/VFX/Attacks/Physical/PhysicalHoldVFX.tres" id="4_tk5ws"]
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="5_ia8xp"]
+[ext_resource type="Script" uid="uid://c31lncu03oyhb" path="res://Skills/Kick.gd" id="6_caqc7"]
 
 [resource]
-script = ExtResource("1_pprh4")
+script = ExtResource("5_ia8xp")
 attack_name = "Kick"
-attack_desc = "Strong Kick"
-stamina_cost = 60.0
-dice_type = 6
-dice_count = 4
-surface_to_create = 0
-surface_duration = 0
+attack_desc = "Kick"
+mana_cost = 0.0
+skill_script = ExtResource("6_caqc7")
+knockback_distance = 1
+hold_vfx = ExtResource("4_tk5ws")
+hit_vfx = ExtResource("2_caqc7")
+hold_sfx = ExtResource("3_mbflv")
+hit_sfx = ExtResource("1_il2gv")
 metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

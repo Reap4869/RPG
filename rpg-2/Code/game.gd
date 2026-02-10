@@ -1,5 +1,7 @@
 extends Node
 
+signal attack_finished
+
 @export var starting_map: MapData 
 @export var fire_vfx_resource: VisualEffectData
 @export var water_vfx_resource: VisualEffectData
@@ -34,8 +36,10 @@ enum InteractionMode { SELECT, ATTACK }
 const WORLD_VFX_SCENE = preload("uid://pc6usvw46jfj")
 
 func _ready() -> void:
-	player_team.player_defeated.connect(_trigger_game_over)
-	enemy_team.enemies_defeated.connect(_trigger_victory)
+	if units_manager.player_group.has_signal("player_defeated"):
+		units_manager.player_group.player_defeated.connect(_trigger_game_over)
+	if units_manager.enemy_group.has_signal("enemies_defeated"):
+		units_manager.enemy_group.enemies_defeated.connect(_trigger_victory)
 	selector.cell_clicked.connect(_on_selector_clicked)
 	if $MusicPlayer.stream:
 		$MusicPlayer.play()
@@ -157,13 +161,31 @@ func _stop_hold_effects() -> void:
 
 func _handle_attack_input(cell: Vector2i) -> void:
 	var attack = active_unit.equipped_attack
+	var stats = active_unit.stats
+	var attacker_cell = map_manager.world_to_cell(active_unit.global_position)
 	
+	# --- 1. PRE-CHECK DISTANCE ---
 	# Check distance using your footpint function
 	var dist = _get_footprint_distance(map_manager.world_to_cell(active_unit.global_position), active_unit.data.grid_size, cell)
 	if dist > attack.attack_range:
 		print("Out of range!")
 		return
-
+	
+	# --- NEW: LINE OF SIGHT CHECK ---
+	# We check from the attacker to the specific cell they just clicked
+	if not map_manager.is_line_clear(attacker_cell, cell):
+		_send_to_log("Target out of sight!", Color.GRAY)
+		return
+	
+	# --- 2. CHECK COOLDOWNS & CHARGES ---
+	if stats.attack_cooldowns.has(attack.attack_name):
+		print("Attack on cooldown! %d turns left." % stats.attack_cooldowns[attack.attack_name])
+		return
+		
+	if attack.requires_charge and not stats.has_charge(attack.charge_type_needed):
+		print("Requires %s charge!" % attack.charge_type_needed)
+		return
+	
 	# Add target
 	multi_target_selection.append(cell)
 	
@@ -177,10 +199,18 @@ func _handle_attack_input(cell: Vector2i) -> void:
 			multi_target_selection.clear()
 			return
 			
-		# SPEND
+		# --- 3. CONSUME EVERYTHING ---
 		active_unit.stats.stamina -= attack.stamina_cost
 		active_unit.stats.mana -= attack.mana_cost
 		active_unit.stats.health -= attack.health_cost # Added health cost!
+		
+		# Consume Charge
+		if attack.requires_charge:
+			stats.consume_charge(attack.charge_type_needed)
+		
+		# Trigger Cooldown
+		if attack.cooldown_turns > 0:
+			stats.attack_cooldowns[attack.attack_name] = attack.cooldown_turns
 		
 		var targets_to_fire = multi_target_selection.duplicate()
 		multi_target_selection.clear()
@@ -188,6 +218,12 @@ func _handle_attack_input(cell: Vector2i) -> void:
 		_execute_multi_target_attack(targets_to_fire)
 
 func _execute_multi_target_attack(target_cells: Array[Vector2i]) -> void:
+	# Add a safety check: if we return early, we MUST still emit the signal 
+	# or the AI will hang forever.
+	if not active_unit: 
+		print("Error: No active unit for attack execution!")
+		attack_finished.emit() 
+		return
 	is_attack_in_progress = true
 	var attack = active_unit.equipped_attack
 	_stop_hold_effects()
@@ -264,9 +300,18 @@ func _execute_multi_target_attack(target_cells: Array[Vector2i]) -> void:
 		# 4. SCREEN SHAKE
 		if attack.screen_shake_type != Globals.ShakeType.NONE:
 			_apply_screen_shake(attack.screen_shake_type)
-				
+		
+		# --- NEW: TRIGGER TILE-BASED SKILLS ---
+		if attack.skill_script:
+			var action = attack.skill_script.new()
+			# 1:attacker, 2:victim, 3:cell, 4:attack, 5:game_ref
+			# We pass null for victim because we are targeting the GROUND here
+			action.execute_skill(active_unit, null, target_cell, attack, self)
+		
 		# 3. AOE LOGIC (Apply hits to victims)
-		var affected_tiles = _get_aoe_tiles(target_cell, attack.aoe_range, attack.aoe_shape)
+		var attacker_cell = map_manager.world_to_cell(active_unit.global_position)
+		# PASS attacker_cell HERE:
+		var affected_tiles = _get_aoe_tiles(target_cell, attack.aoe_range, attack.aoe_shape, attacker_cell)
 		for cell in affected_tiles:
 			var victim = _get_occupant_at_cell(cell)
 			if victim:
@@ -281,22 +326,33 @@ func _execute_multi_target_attack(target_cells: Array[Vector2i]) -> void:
 					h_vfx.global_position = victim.global_position
 					h_vfx.setup(attack.hit_vfx)
 					
-				_apply_attack_damage(attack, active_unit, victim)
+				_apply_attack_damage(attack, active_unit, victim, target_cell) # Pass target_cell here too
 			# SURFACE LOGIC
 			if attack.surface_to_create != null:
 				map_manager.apply_surface_to_cell(cell, attack.surface_to_create, attack.surface_duration)
 
 	# 3. UNLOCK
+	print("[COMBAT] Execution complete. Cleaning up.")
 	is_attack_in_progress = false # UNLOCK INPUT
-	_set_interaction_mode(InteractionMode.SELECT)
-	main_ui.update_buttons(active_unit)
+	# Only switch back to SELECT mode and update UI if it's the player's turn
+	if Globals.current_state == Globals.TurnState.PLAYER_TURN:
+		_set_interaction_mode(InteractionMode.SELECT)
+		if active_unit and active_unit.data.is_player_controlled:
+			main_ui.update_buttons(active_unit)
+	else:
+		# If it's the ENEMY turn, we should NOT be updating the skill bar 
+		# or setting the enemy as an "active" unit for the player UI.
+		main_ui.skill_bar.update_buttons(null)
+	attack_finished.emit()
 
-func _apply_attack_damage(attack: AttackResource, attacker: Unit, victim: Node2D) -> void:
+func _apply_attack_damage(attack: AttackResource, attacker: Unit, victim: Node2D, impact_cell: Vector2i) -> void:
 	# 1. Get Math and Result
 	var data = attack.get_damage_data(attacker.stats, victim.stats)
 	var damage = data[0]
 	var result = data[1]
-
+	if attack.skill_script:
+		var action = attack.skill_script.new()
+		action.execute_skill(attacker, victim, impact_cell, attack, self)
 	# Handle the "Resisted" text override for Spells
 	var label_override = ""
 	if result == attack.HitResult.MISS and attack.category == Globals.AttackCategory.SPELL:
@@ -365,6 +421,13 @@ func _apply_tick_damage(victim: Unit, amount: int, type: Globals.DamageType, buf
 	var stat_val = 0.0
 	var scaling_info = "None"
 	
+	# Find the buff entry to get the stack count
+	var stack_multiplier = 1
+	for b in victim.stats.active_buffs:
+		if b.resource == buff_res:
+			stack_multiplier = b.get("stacks", 1)
+			break
+	# ... (your existing Dice and Scaling math) ...
 	if buff_res:
 		# 1. Dice Logic
 		var dice_rolls = []
@@ -389,7 +452,8 @@ func _apply_tick_damage(victim: Unit, amount: int, type: Globals.DamageType, buf
 		
 		# 3. Calculate Final Amount
 		var stat_bonus = stat_val * buff_res.scaling_multiplier
-		var total_tick = base_amount + dice_sum + stat_bonus
+		var total_tick = (base_amount + dice_sum + stat_bonus) * stack_multiplier
+		#var total_tick = base_amount + dice_sum + stat_bonus
 		
 		# IMPORTANT: If the buff is positive, it should be healing (negative damage)
 		var final_amount_raw = total_tick
@@ -401,12 +465,26 @@ func _apply_tick_damage(victim: Unit, amount: int, type: Globals.DamageType, buf
 		var final_amount = roundi(final_amount_raw * (1.0 - resist_pct))
 		
 		# --- EXPANDED CONSOLE LOG ---
-		print("--- TICK LOG: %s ---" % buff_res.buff_name)
-		var math_str = "(Base %d + Dice %d + %s %.1f)" % [base_amount, dice_sum, scaling_info, stat_bonus]
-		if buff_res.is_positive:
-			print("%s Result: +%d HP (Healing)" % [math_str, abs(final_amount)])
-		else:
-			print("%s Result: -%d DMG (Damage)" % [math_str, final_amount])
+		var type_name = Globals.DamageType.keys()[type]
+		var stack_str = " (x%d Stacks)" % stack_multiplier if stack_multiplier > 1 else ""
+		
+		print("--- [TICK: %s%s] ---" % [buff_res.buff_name.to_upper(), stack_str])
+		
+		if buff_res.scaling_stat != Globals.ScalingStat.NONE:
+			print("Scaling: %s (%.1f) * %.1f = %.1f" % [scaling_info, stat_val, buff_res.scaling_multiplier, stat_bonus])
+		
+		var dice_str = "%dd%s (%d)" % [buff_res.dice_count, buff_res.dice_type, dice_sum]
+		print("Base: %d | Dice: %s | Bonus: %.1f" % [amount, dice_str, stat_bonus])
+	
+		var total_pre_stack = amount + dice_sum + stat_bonus
+		if stack_multiplier > 1:
+			print("Subtotal: %.1f * %d Stacks = %.1f" % [total_pre_stack, stack_multiplier, total_tick])
+		
+		if resist_pct != 0:
+			print("Resist: -%d%%" % roundi(resist_pct * 100))
+		
+		var final_word = "HEAL" if buff_res.is_positive else "DAMAGE"
+		print(">> %s: %d" % [final_word, abs(final_amount)])
 		print("-------------------------")
 
 		# 5. Apply to Health and UI
@@ -449,6 +527,11 @@ func _handle_selection(cell: Vector2i) -> void:
 		_set_selected_unit(null)
 
 func _set_selected_unit(unit: Unit) -> void:
+	if unit:
+		print("[UI] Selected Unit: ", unit.name)
+	else:
+		print("[UI] Selection Cleared")
+	
 	# Clean up previous selection visual if your Unit script has a highlight
 	if selected_unit and is_instance_valid(selected_unit):
 		selected_unit.set_selected(false)
@@ -462,10 +545,24 @@ func _set_selected_unit(unit: Unit) -> void:
 		selected_unit.set_selected(true)
 
 func _set_active_unit(unit: Unit) -> void:
+	if unit:
+		print("[GAME] Active Unit set to: ", unit.name)
+	else:
+		print("[GAME] Active Unit cleared")
+	
+	# Disconnect old signals if they exist
+	if active_unit and active_unit.stats.cooldowns_updated.is_connected(_on_stats_updated):
+		active_unit.stats.cooldowns_updated.disconnect(_on_stats_updated)
+
 	active_unit = unit
 	
-	# Only show command buttons for player units
-	main_ui.update_buttons(active_unit)
+	# Only update the skill bar if it's a player unit; otherwise, clear it
+	if active_unit and active_unit.data.is_player_controlled:
+		main_ui.skill_bar.update_buttons(active_unit)
+		if not active_unit.stats.cooldowns_updated.is_connected(_on_stats_updated):
+			active_unit.stats.cooldowns_updated.connect(_on_stats_updated)
+	else:
+		main_ui.skill_bar.update_buttons(null) # This hides the bar
 	
 	# Update Highlights (Move/Attack range)
 	if highlights:
@@ -473,6 +570,9 @@ func _set_active_unit(unit: Unit) -> void:
 		highlights.cached_move_range.clear() 
 		highlights.cached_path.clear()       
 		_update_highlights()
+
+func _on_stats_updated():
+	main_ui.skill_bar.update_buttons(active_unit)
 
 func _update_highlights() -> void:
 	if not highlights: return
@@ -513,7 +613,7 @@ func _handle_unit_death(unit: Unit) -> void:
 	if not is_instance_valid(unit): return
 
 	_send_to_log("%s has been slain!" % unit.name, Color.ORANGE_RED)
-	
+	_award_kill_xp(unit)
 	# 1. Clear the tiles
 	unregister_unit(unit)
 	
@@ -523,8 +623,37 @@ func _handle_unit_death(unit: Unit) -> void:
 	if selected_unit == unit:
 		_set_selected_unit(null)
 	
-	# 3. Final cleanup
+	# Use a small call_deferred to ensure the unit is removed from the tree 
+	# before the manager checks if the group is empty
+	unit.get_parent().remove_child(unit)
 	unit.queue_free()
+	
+	# MANUALLY TRIGGER CHECK
+	#_check_end_conditions()
+	# Small delay to let the tree update, then check if someone won
+	get_tree().create_timer(0.1).timeout.connect(_check_end_conditions)
+
+func _award_kill_xp(killed_unit: Unit) -> void:
+	var xp_to_give = killed_unit.stats.base_xp_value
+	
+	# If an enemy is killed, we want to reward all players (alive or dead)
+	if killed_unit.get_parent() == units_manager.enemy_group:
+		# Note: If you want to include dead units, you need a 'all_player_units' array
+		# that doesn't get cleared on death, OR award it right before queue_free
+		for member in units_manager.player_group.get_children():
+			if member is Unit:
+				member.stats.experience += xp_to_give
+	else:
+		# If a player is killed, enemies gain XP
+		for member in units_manager.enemy_group.get_children():
+			if member is Unit:
+				member.stats.experience += xp_to_give
+
+# Function for Quest completions
+func award_quest_xp(amount: int) -> void:
+	for member in units_manager.player_group.get_children():
+		member.stats.experience += amount
+	_send_to_log("Quest Complete! Party gained %d XP." % amount, Color.GOLD)
 
 func _handle_object_death(obj: WorldObject) -> void:
 	_send_to_log("%s was destroyed!" % obj.name, Color.GRAY)
@@ -686,37 +815,82 @@ func _get_footprint_distance(origin: Vector2i, size: Vector2i, target: Vector2i)
 				shortest_dist = d
 	return shortest_dist
 
-func _get_aoe_tiles(center: Vector2i, aoe_range: int, shape: Globals.AreaShape) -> Array[Vector2i]:
+func _get_aoe_tiles(center: Vector2i, aoe_range: int, shape: Globals.AreaShape, origin: Vector2i = Vector2i.ZERO) -> Array[Vector2i]:
 	var affected_tiles: Array[Vector2i] = []
-	
 	# Range 0 or 1 is always just the target tile
 	if aoe_range <= 0:
 		return [center]
+	
+	# Calculate direction from attacker to the target tile
+	# This now allows (-1,-1), (1,1), etc.
+	var diff = center - origin
+	var dir = Vector2i(clampi(diff.x, -1, 1), clampi(diff.y, -1, 1))
 
-	# To get Range 1 = 2x2, we need the loop to go from 0 to 1 (2 steps)
-	# To get Range 2 = 3x3, we need the loop to go from -1 to 1 (3 steps)
-	var start_offset: int
-	var end_offset: int
+	match shape:
+		Globals.AreaShape.LINE:
+			# Start from the center and move 'aoe_range' steps in 'dir'
+			for i in range(aoe_range):
+				affected_tiles.append(center + (dir * i))
 
-	if aoe_range % 2 == 0: # EVEN (2, 4, 6...)
-		start_offset = -(aoe_range / 2) + 1
-		end_offset = (aoe_range / 2)
-	else: # ODD (1, 3, 5...)
-		start_offset = -(aoe_range / 2)
-		end_offset = (aoe_range / 2)
+		Globals.AreaShape.CLEAVE:
+			affected_tiles.append(center)
+			# If dir is diagonal (e.g., 1,1), we want (1,0) and (0,1)
+			if abs(dir.x) == 1 and abs(dir.y) == 1:
+				affected_tiles.append(center - Vector2i(dir.x, 0))
+				affected_tiles.append(center - Vector2i(0, dir.y))
+			else:
+				# Normal cardinal rotation for Up/Down/Left/Right
+				var side_dir = Vector2i(-dir.y, dir.x) 
+				affected_tiles.append(center + side_dir)
+				affected_tiles.append(center - side_dir)
+				
+		Globals.AreaShape.SQUARE, Globals.AreaShape.DIAMOND:
+			# To get Range 1 = 2x2, we need the loop to go from 0 to 1 (2 steps)
+			# To get Range 2 = 3x3, we need the loop to go from -1 to 1 (3 steps)
+			var start_offset: int
+			var end_offset: int
 
-	for x in range(start_offset, end_offset + 1):
-		for y in range(start_offset, end_offset + 1):
-			var cell = center + Vector2i(x, y)
+			if aoe_range % 2 == 0: # EVEN (2, 4, 6...)
+				start_offset = -(aoe_range / 2) + 1
+				end_offset = (aoe_range / 2)
+			else: # ODD (1, 3, 5...)
+				start_offset = -(aoe_range / 2)
+				end_offset = (aoe_range / 2)
+
+			for x in range(start_offset, end_offset + 1):
+				for y in range(start_offset, end_offset + 1):
+					var cell = center + Vector2i(x, y)
 			
-			if shape == Globals.AreaShape.SQUARE:
-				affected_tiles.append(cell)
-			elif shape == Globals.AreaShape.DIAMOND:
-				# Manhattan distance check for diamond
-				if abs(x) + abs(y) <= (aoe_range / 2):
-					affected_tiles.append(cell)
+					if shape == Globals.AreaShape.SQUARE:
+						affected_tiles.append(cell)
+					elif shape == Globals.AreaShape.DIAMOND:
+						# Manhattan distance check for diamond
+						if abs(x) + abs(y) <= (aoe_range / 2):
+							affected_tiles.append(cell)
+			pass
 						
 	return affected_tiles
+
+func apply_knockback(victim: Unit, direction: Vector2i, distance: int) -> void:
+	if distance <= 0: return
+	
+	var current_cell = map_manager.world_to_cell(victim.global_position)
+	var final_cell = current_cell
+	
+	# Check each tile in the path
+	for i in range(1, distance + 1):
+		var test_cell = current_cell + (direction * i)
+		if map_manager.is_area_walkable(test_cell, victim.data.grid_size, victim):
+			final_cell = test_cell
+		else:
+			# Hit a wall/unit, stop early
+			break
+			
+	if final_cell != current_cell:
+		register_unit_position(victim, final_cell)
+		victim.global_position = map_manager.cell_to_world(final_cell)
+		victim.cell_entered.emit(final_cell)
+		_send_to_log("%s was knocked back!" % victim.name, Color.GOLD)
 
 # --- TURNS ---
 
@@ -742,13 +916,20 @@ func _start_player_turn() -> void:
 	for unit in player_team.get_children():
 		if unit is Unit:
 			_start_unit_turn(unit) # This triggers Burn damage!
+	
+	#map_manager.tick_surfaces()
+	#player_team.replenish_all_stamina()
+	
+	# NEW: Automatically select the first available player unit
+	select_player_unit()
+	
 	#Then for objects
 	#for obj in objects_manager.get_children():
 	#	if obj is WorldObject and obj.stats.has_method("apply_turn_start_buffs"):
 			# Pass obj as the 'victim' so tick damage knows where to hit
 	#		obj.stats.apply_turn_start_buffs(obj, self)
 	
-	map_manager.tick_surfaces()
+	#map_manager.tick_surfaces()
 	player_team.replenish_all_stamina()
 
 func _on_end_turn_button_pressed() -> void:
@@ -767,35 +948,48 @@ func _run_enemy_phase() -> void:
 	enemy_team.replenish_all_stamina()
 	# Get all enemies and put them in a queue
 	enemy_queue = enemy_team.get_children()
+	print("[AI] Found ", enemy_queue.size(), " enemies to process.")
 	_process_next_enemy()
 
 func _process_next_enemy() -> void:
+	# Always clear selection visuals before the next enemy acts
+	_set_active_unit(null)
+	_set_selected_unit(null)
+	
 	if enemy_queue.is_empty():
+		print("[TURN] All enemies processed. Returning to Player.")
 		_start_player_turn()
 		return
 
 	var current_enemy = enemy_queue.pop_front()
+	print("[AI] Processing: ", current_enemy.name)
 	
 	if current_enemy is Unit:
-		# 1. Process Poison/Burn/Buffs first!
 		_start_unit_turn(current_enemy)
 		
-		# 2. Check if the buff killed them before they could act
 		if current_enemy.stats.health <= 0:
-			# _start_unit_turn already handled death, so we just move to next
+			print("[AI] Unit ", current_enemy.name, " died at start of turn. Skipping.")
 			_process_next_enemy()
 			return
 
-		# 3. If alive, proceed with AI
 		if current_enemy.data and current_enemy.data.ai_behavior:
+			# AI will set game.active_unit = self inside make_decision
 			var ai = current_enemy.data.ai_behavior
 			if not ai.decision_completed.is_connected(_process_next_enemy):
 				ai.decision_completed.connect(_process_next_enemy, CONNECT_ONE_SHOT)
+			print("[AI] Requesting decision from behavior: ", ai.resource_name)
 			ai.make_decision(current_enemy, self, map_manager)
 	else:
+		print("[AI] Warning: ", current_enemy.name, " has no behavior assigned. Skipping.")
 		_process_next_enemy()
 
 # --- END CONDITIONS ---
+
+func _check_end_conditions() -> void:
+	if units_manager.enemy_group.get_children().size() == 0:
+		_trigger_victory()
+	elif units_manager.player_group.get_children().size() == 0:
+		_trigger_game_over()
 
 func _trigger_victory() -> void:
 	if Globals.current_state == Globals.TurnState.VICTORY: return
@@ -961,23 +1155,6 @@ func _spawn_damage_number(value: int, pos: Vector2, type: Globals.DamageType, re
 	tween.tween_property(label, "modulate:a", 0.0, 0.6).set_delay(0.8)
 	
 	tween.finished.connect(label.queue_free)
-# --- SKILL LOGIC  ---
-
-func _execute_sanguine_siphon(attacker: Unit, victim: Unit):
-	# 1. Perform the standard attack logic first
-	# (Assuming you have a variable 'siphon_attack_res')
-	_apply_attack_damage(siphon_attack_res, attacker, victim)
-	
-	# 2. Check if the victim is bleeding
-	if victim.stats._has_buff("Bleed"):
-		# Heal Attacker for 5 HP and 5 Stamina
-		attacker.stats.health += 5
-		attacker.stats.stamina += 5
-		
-		# Feedback
-		_spawn_damage_number(5, attacker.global_position, Globals.DamageType.PHYSICAL, AttackResource.HitResult.HIT, "HEAL")
-		_send_to_log("%s siphons life from the bleeding wound!" % attacker.name, Color.CRIMSON)
-
 
 # --- INPUT OVERRIDE (Fixing Space Bar) ---
 func _input(event):

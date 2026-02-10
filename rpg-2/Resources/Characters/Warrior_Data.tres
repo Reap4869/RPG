@@ -3,8 +3,13 @@
 [ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="1_5ai52"]
 [ext_resource type="Resource" uid="uid://detwxx1vx2tvq" path="res://Resources/Characters/Warrior_Stats.tres" id="1_ce1kb"]
 [ext_resource type="Script" uid="uid://caug8a8g82wya" path="res://Code/unit_data.gd" id="1_lpu63"]
-[ext_resource type="Resource" uid="uid://b73yaedct8wuh" path="res://Resources/Attacks/Fire/Attack_Firebolt.tres" id="4_fp8m4"]
+[ext_resource type="Resource" uid="uid://dkwxd61v8qpiu" path="res://Resources/Attacks/Physical/Attack_Cleave.tres" id="2_wqtr4"]
+[ext_resource type="Resource" uid="uid://dihxjlju33eyw" path="res://Resources/Attacks/Physical/Attack_Thrust.tres" id="3_r0hit"]
+[ext_resource type="Resource" uid="uid://dn1pwn12u8mb7" path="res://Resources/Attacks/Physical/Attack_Kick.tres" id="4_rtmtd"]
+[ext_resource type="Resource" uid="uid://b7dbrnph6gi6j" path="res://Resources/Attacks/Physical/Attack_KnivesThrow.tres" id="5_688wr"]
+[ext_resource type="Resource" uid="uid://bme7kqegbx0xd" path="res://Resources/Attacks/Physical/Attack_RepeaterCrossBow.tres" id="6_2hq3f"]
 [ext_resource type="Texture2D" uid="uid://1k63byfw7ewi" path="res://Art/RPG_SpriteSheet.png" id="6_ce1kb"]
+[ext_resource type="Resource" uid="uid://d1lk5xi4085ve" path="res://Resources/Attacks/Physical/Attack_ArmCannon.tres" id="7_si4st"]
 
 [resource]
 script = ExtResource("1_lpu63")
@@ -13,5 +18,5 @@ is_player_controlled = true
 world_region = Rect2(224, 32, 32, 33)
 portrait_region = Rect2(224, 32, 32, 33)
 base_stats = ExtResource("1_ce1kb")
-attacks = Array[ExtResource("1_5ai52")]([ExtResource("4_fp8m4")])
+attacks = Array[ExtResource("1_5ai52")]([ExtResource("2_wqtr4"), ExtResource("3_r0hit"), ExtResource("4_rtmtd"), ExtResource("5_688wr"), ExtResource("6_2hq3f"), ExtResource("7_si4st")])
 metadata/_custom_type_script = "uid://caug8a8g82wya"

@@ -8,7 +8,7 @@
 
 [resource]
 script = ExtResource("2_1es7s")
-attack_name = "Staf Hit"
+attack_name = "Staff Hit"
 mana_cost = 0.0
 hold_vfx = ExtResource("2_bp4a7")
 hit_vfx = ExtResource("1_1es7s")

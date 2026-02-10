@@ -1,6 +1,5 @@
 [gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://bu1uxxlmp5m4e"]
 
-[ext_resource type="Resource" uid="uid://csniio5fia08r" path="res://Resources/Buffs/Regen_Buff.tres" id="1_yvflv"]
 [ext_resource type="AudioStream" uid="uid://8fcagrqhclyx" path="res://Sound/SFX/Fire/EM_FIRE_HOLD_4s.wav" id="2_rtpvf"]
 [ext_resource type="Resource" uid="uid://c6a6tew18qv7w" path="res://Resources/VFX/Attacks/Fire/FireHoldVFX.tres" id="3_2v3qe"]
 [ext_resource type="AudioStream" uid="uid://clx6rwa556fvr" path="res://Sound/SFX/Fire/EM_FIRE_IMPACT_01.wav" id="4_nkbgm"]
@@ -13,10 +12,10 @@ attack_name = "Regeneration"
 category = 1
 attack_desc = "Spell Regeneration"
 damage_type = 11
-scaling_stat = 1
+scaling_stat = 2
 attack_range = 3
 aoe_shape = 1
-buff_to_apply = ExtResource("1_yvflv")
+is_healing = true
 hold_vfx = ExtResource("3_2v3qe")
 impact_vfx = ExtResource("5_64epi")
 hold_sfx = ExtResource("2_rtpvf")

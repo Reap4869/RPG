@@ -184,6 +184,36 @@ func is_area_walkable(top_left_cell: Vector2i, unit_size: Vector2i, unit_to_igno
 				
 	return true
 
+func is_line_clear(start: Vector2i, end: Vector2i) -> bool:
+	var current = Vector2(start)
+	var target = Vector2(end)
+	var distance = current.distance_to(target)
+	
+	if distance < 1.1: return true # Adjacent tiles are always clear
+	
+	# We check more points than tiles to ensure we don't "skip" over a corner
+	var step_count = int(distance * 3) 
+	var step_vec = (target - current) / step_count
+	
+	var last_checked_cell = start
+	
+	for i in range(1, step_count):
+		current += step_vec
+		var check_cell = Vector2i(round(current.x), round(current.y))
+		
+		# Only check if we've moved to a new cell and haven't reached the end
+		if check_cell != last_checked_cell and check_cell != end:
+			if not is_within_bounds(check_cell): 
+				return false
+			
+			# IMPORTANT: Use your existing grid_data wall check
+			if grid_data[check_cell].is_wall:
+				return false
+				
+			last_checked_cell = check_cell
+			
+	return true
+
 func apply_surface_to_cell(cell: Vector2i, new_surface: SurfaceData, duration: int) -> void:
 	if not grid_data.has(cell): return
 	var cell_info = grid_data[cell]

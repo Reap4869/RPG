@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://n40c2l4ggu1q"]
+
+[ext_resource type="AudioStream" uid="uid://8fcagrqhclyx" path="res://Sound/SFX/Fire/EM_FIRE_HOLD_4s.wav" id="1_4vrcn"]
+[ext_resource type="Resource" uid="uid://c6a6tew18qv7w" path="res://Resources/VFX/Attacks/Fire/FireHoldVFX.tres" id="2_8j7l3"]
+[ext_resource type="AudioStream" uid="uid://clx6rwa556fvr" path="res://Sound/SFX/Fire/EM_FIRE_IMPACT_01.wav" id="3_wqngx"]
+[ext_resource type="Resource" uid="uid://cdu844ijx72qd" path="res://Resources/VFX/Attacks/Fire/SmallFireImpact.tres" id="4_l1sif"]
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="5_bec4t"]
+[ext_resource type="Script" uid="uid://beq4ka3l88why" path="res://Skills/Blink.gd" id="6_4vrcn"]
+
+[resource]
+script = ExtResource("5_bec4t")
+attack_name = "Path of Shadows"
+category = 1
+attack_desc = "Path of Shadows"
+damage_type = 0
+scaling_stat = 0
+dice_count = 0
+attack_range = 3
+aoe_shape = 1
+skill_script = ExtResource("6_4vrcn")
+hold_vfx = ExtResource("2_8j7l3")
+impact_vfx = ExtResource("4_l1sif")
+hold_sfx = ExtResource("1_4vrcn")
+projectile_sfx = ExtResource("1_4vrcn")
+impact_sfx = ExtResource("3_wqngx")
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

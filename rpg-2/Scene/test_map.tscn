@@ -6,12 +6,12 @@
 [ext_resource type="Resource" uid="uid://dwbxn83mirxks" path="res://Resources/Characters/Mage_Data.tres" id="4_afjau"]
 [ext_resource type="PackedScene" uid="uid://b4b3ax2tc1ud2" path="res://Scene/ObjectMarker.tscn" id="4_cqxdw"]
 [ext_resource type="Resource" uid="uid://6r1avnvj1cq1" path="res://Resources/Crate_Object.tres" id="5_2dt0b"]
-[ext_resource type="Resource" uid="uid://c3vxexx8tweyv" path="res://Resources/Slimes/FireSlime_UnitData.tres" id="5_45wju"]
 [ext_resource type="Resource" uid="uid://cwaptxtb8n32r" path="res://Resources/Barril_Object.tres" id="6_2dt0b"]
-[ext_resource type="Resource" uid="uid://bijoumr8i0hyu" path="res://Resources/Slimes/GrassSlime_UnitData.tres" id="6_akov2"]
 [ext_resource type="PackedScene" uid="uid://o6o5ag6ejv01" path="res://Scene/SurfaceMarker.tscn" id="7_6rwq6"]
-[ext_resource type="Resource" uid="uid://dd300ds4ygcuq" path="res://Resources/Slimes/WaterSlime_UnitData.tres" id="7_hg4or"]
 [ext_resource type="Resource" uid="uid://c7u3ljbe5bf1" path="res://Resources/Characters/Rogue_Data.tres" id="8_436an"]
+[ext_resource type="Resource" uid="uid://dd300ds4ygcuq" path="res://Resources/Slimes/WaterSlime_UnitData.tres" id="10_akov2"]
+[ext_resource type="Resource" uid="uid://c3vxexx8tweyv" path="res://Resources/Slimes/FireSlime_UnitData.tres" id="11_afjau"]
+[ext_resource type="Resource" uid="uid://bijoumr8i0hyu" path="res://Resources/Slimes/GrassSlime_UnitData.tres" id="12_45wju"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_oalv4"]
 texture = ExtResource("1_tu5cy")
@@ -58,18 +58,6 @@ position = Vector2(176, 112)
 unit_data = ExtResource("4_afjau")
 is_player = true
 
-[node name="SpawnMarker7" parent="." unique_id=1239972178 instance=ExtResource("2_vgid3")]
-position = Vector2(304, 144)
-unit_data = ExtResource("5_45wju")
-
-[node name="SpawnMarker9" parent="." unique_id=992179743 instance=ExtResource("2_vgid3")]
-position = Vector2(304, 112)
-unit_data = ExtResource("6_akov2")
-
-[node name="SpawnMarker8" parent="." unique_id=1120692230 instance=ExtResource("2_vgid3")]
-position = Vector2(304, 176)
-unit_data = ExtResource("7_hg4or")
-
 [node name="SpawnMarker2" parent="." unique_id=1238011066 instance=ExtResource("2_vgid3")]
 position = Vector2(176, 144)
 unit_data = ExtResource("8_436an")
@@ -86,3 +74,15 @@ object_data = ExtResource("6_2dt0b")
 [node name="SpawnMarker5" parent="." unique_id=1353818671 instance=ExtResource("7_6rwq6")]
 position = Vector2(112, 48)
 surface_type = 3
+
+[node name="SpawnMarker7" parent="." unique_id=1692366907 instance=ExtResource("2_vgid3")]
+position = Vector2(272, 176)
+unit_data = ExtResource("10_akov2")
+
+[node name="SpawnMarker8" parent="." unique_id=1399749468 instance=ExtResource("2_vgid3")]
+position = Vector2(272, 144)
+unit_data = ExtResource("11_afjau")
+
+[node name="SpawnMarker9" parent="." unique_id=802137289 instance=ExtResource("2_vgid3")]
+position = Vector2(272, 112)
+unit_data = ExtResource("12_45wju")

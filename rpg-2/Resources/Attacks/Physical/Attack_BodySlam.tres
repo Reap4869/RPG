@@ -1,10 +1,12 @@
 [gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://ip56bamlye1p"]
 
 [ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="1_gmx4e"]
+[ext_resource type="AudioStream" uid="uid://bss7dbr2s2jts" path="res://Sound/SFX/Phys/Bonk.wav" id="1_pn4lq"]
 
 [resource]
 script = ExtResource("1_gmx4e")
 attack_name = "Body Slam"
-stamina_cost = 20.0
-surface_to_create = 0
+attack_desc = "Body Slam"
+mana_cost = 0.0
+hit_sfx = ExtResource("1_pn4lq")
 metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

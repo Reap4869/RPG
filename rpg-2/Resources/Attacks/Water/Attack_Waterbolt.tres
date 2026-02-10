@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://h5or1ekvnsv6"]
+
+[ext_resource type="AudioStream" uid="uid://8fcagrqhclyx" path="res://Sound/SFX/Fire/EM_FIRE_HOLD_4s.wav" id="2_uqs0o"]
+[ext_resource type="Resource" uid="uid://c6a6tew18qv7w" path="res://Resources/VFX/Attacks/Fire/FireHoldVFX.tres" id="3_pnfts"]
+[ext_resource type="AudioStream" uid="uid://clx6rwa556fvr" path="res://Sound/SFX/Fire/EM_FIRE_IMPACT_01.wav" id="4_o1vnc"]
+[ext_resource type="Resource" uid="uid://cdu844ijx72qd" path="res://Resources/VFX/Attacks/Fire/SmallFireImpact.tres" id="5_oxsov"]
+[ext_resource type="Resource" uid="uid://ch18aiyryssbv" path="res://Resources/VFX/Attacks/Fire/SmallFireProjectile.tres" id="6_q023u"]
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="7_8thjo"]
+
+[resource]
+script = ExtResource("7_8thjo")
+attack_name = "Firebolt"
+attack_desc = "Fast Fire Spell"
+damage_type = 3
+attack_range = 3
+aoe_shape = 1
+has_projectile = true
+hold_vfx = ExtResource("3_pnfts")
+projectile_vfx = ExtResource("6_q023u")
+impact_vfx = ExtResource("5_oxsov")
+hold_sfx = ExtResource("2_uqs0o")
+projectile_sfx = ExtResource("2_uqs0o")
+impact_sfx = ExtResource("4_o1vnc")
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

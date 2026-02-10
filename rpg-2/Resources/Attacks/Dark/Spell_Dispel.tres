@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://dr2d0v4wc8oy3"]
+
+[ext_resource type="AudioStream" uid="uid://8fcagrqhclyx" path="res://Sound/SFX/Fire/EM_FIRE_HOLD_4s.wav" id="1_je54m"]
+[ext_resource type="Resource" uid="uid://c6a6tew18qv7w" path="res://Resources/VFX/Attacks/Fire/FireHoldVFX.tres" id="2_uqknb"]
+[ext_resource type="AudioStream" uid="uid://clx6rwa556fvr" path="res://Sound/SFX/Fire/EM_FIRE_IMPACT_01.wav" id="3_il3jp"]
+[ext_resource type="Resource" uid="uid://cdu844ijx72qd" path="res://Resources/VFX/Attacks/Fire/SmallFireImpact.tres" id="4_pj43v"]
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="5_tcafx"]
+[ext_resource type="Script" uid="uid://chw7l8ilbgkmm" path="res://Skills/Dispel.gd" id="6_je54m"]
+
+[resource]
+script = ExtResource("5_tcafx")
+attack_name = "Dispel"
+category = 1
+attack_desc = "Dispel"
+damage_type = 0
+scaling_stat = 0
+dice_count = 0
+attack_range = 3
+aoe_shape = 1
+skill_script = ExtResource("6_je54m")
+hold_vfx = ExtResource("2_uqknb")
+impact_vfx = ExtResource("4_pj43v")
+hold_sfx = ExtResource("1_je54m")
+projectile_sfx = ExtResource("1_je54m")
+impact_sfx = ExtResource("3_il3jp")
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

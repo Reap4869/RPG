@@ -263,9 +263,18 @@ func _draw_hover_target_highlight() -> void:
 	
 	var attack = active_unit.equipped_attack
 	if not attack: return
+	
+	# Before calculating AoE, check if we can even see the hovered cell
+	var attacker_cell = game_node.map_manager.world_to_cell(active_unit.global_position)
 
+	if not game_node.map_manager.is_line_clear(attacker_cell, hovered_cell):
+		# Draw a "Blocked" highlight or just return
+		var rect = Rect2(Vector2(hovered_cell * 32), Vector2(32, 32))
+		draw_rect(rect, Color(0, 0, 0, 0.4), true) # Dark tint for blocked
+		return
+	
 	# 1. Get the tiles affected by the AoE
-	var aoe_tiles = game_node._get_aoe_tiles(hovered_cell, attack.aoe_range, attack.aoe_shape)
+	var aoe_tiles = game_node._get_aoe_tiles(hovered_cell, attack.aoe_range, attack.aoe_shape, attacker_cell)
 	
 	# 2. Draw the AoE tiles
 	for cell in aoe_tiles:

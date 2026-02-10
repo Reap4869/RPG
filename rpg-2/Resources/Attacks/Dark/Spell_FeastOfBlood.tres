@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://cuk3qgvvvkw25"]
+
+[ext_resource type="AudioStream" uid="uid://8fcagrqhclyx" path="res://Sound/SFX/Fire/EM_FIRE_HOLD_4s.wav" id="2_w0mkr"]
+[ext_resource type="Resource" uid="uid://c6a6tew18qv7w" path="res://Resources/VFX/Attacks/Fire/FireHoldVFX.tres" id="3_bo4a6"]
+[ext_resource type="AudioStream" uid="uid://clx6rwa556fvr" path="res://Sound/SFX/Fire/EM_FIRE_IMPACT_01.wav" id="4_qqnli"]
+[ext_resource type="Resource" uid="uid://cdu844ijx72qd" path="res://Resources/VFX/Attacks/Fire/SmallFireImpact.tres" id="5_5cy0u"]
+[ext_resource type="Script" uid="uid://s3wdo7lx18sb" path="res://Skills/FeastOfBlood.gd" id="6_icyde"]
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="6_otfio"]
+
+[resource]
+script = ExtResource("6_otfio")
+attack_name = "Feast of Blood"
+category = 1
+attack_desc = "Feast of Bood"
+stamina_cost = 0.0
+mana_cost = 0.0
+damage_type = 0
+scaling_stat = 0
+dice_count = 0
+attack_range = 3
+aoe_shape = 1
+skill_script = ExtResource("6_icyde")
+hold_vfx = ExtResource("3_bo4a6")
+impact_vfx = ExtResource("5_5cy0u")
+hold_sfx = ExtResource("2_w0mkr")
+projectile_sfx = ExtResource("2_w0mkr")
+impact_sfx = ExtResource("4_qqnli")
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://dxqykdnnkx1an"]
+
+[ext_resource type="Resource" uid="uid://bt48lsnkg70ap" path="res://Resources/Buffs/Toxin_Buff.tres" id="1_7dno5"]
+[ext_resource type="AudioStream" uid="uid://bss7dbr2s2jts" path="res://Sound/SFX/Phys/Bonk.wav" id="1_xvg5g"]
+[ext_resource type="Resource" uid="uid://bnmm20jbq830a" path="res://Resources/VFX/Attacks/Physical/SmallPhysicalHit.tres" id="2_7qp36"]
+[ext_resource type="AudioStream" uid="uid://nkujbpqmrqoe" path="res://Sound/SFX/Earth/EM_EARTH_IMPACT_01.wav" id="3_7dno5"]
+[ext_resource type="Resource" uid="uid://baewjw836quug" path="res://Resources/VFX/Attacks/Physical/PhysicalHoldVFX.tres" id="4_jxbfw"]
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="5_d1agi"]
+
+[resource]
+script = ExtResource("5_d1agi")
+attack_name = "Toxic Strike"
+attack_desc = "Applys Toxin"
+mana_cost = 0.0
+dice_count = 1
+buff_to_apply = ExtResource("1_7dno5")
+hold_vfx = ExtResource("4_jxbfw")
+hit_vfx = ExtResource("2_7qp36")
+hold_sfx = ExtResource("3_7dno5")
+hit_sfx = ExtResource("1_xvg5g")
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

@@ -29,4 +29,9 @@ func replenish_all_stamina() -> void:
 		unit.replenish_stamina()
 
 func is_team_defeated() -> bool:
-	return get_units().size() == 0
+	var alive_units = 0
+	for child in get_children():
+		# If the child is a unit AND it isn't currently being deleted
+		if child is Unit and not child.is_queued_for_deletion():
+			alive_units += 1
+	return alive_units == 0

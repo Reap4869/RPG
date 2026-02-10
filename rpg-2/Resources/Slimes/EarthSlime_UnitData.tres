@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="UnitData" format=3 uid="uid://e5r1gh78k7yh"]
 
-[ext_resource type="Resource" uid="uid://cdtqcevwqes8r" path="res://Resources/Slimes/Slime_Ai.tres" id="1_ms1u6"]
+[ext_resource type="Resource" uid="uid://cdtqcevwqes8r" path="res://Resources/Slimes/SlimeMelee_Ai.tres" id="1_ms1u6"]
 [ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="2_4cv1q"]
 [ext_resource type="Resource" uid="uid://ip56bamlye1p" path="res://Resources/Attacks/Physical/Attack_BodySlam.tres" id="3_owx8h"]
 [ext_resource type="Resource" uid="uid://b73yaedct8wuh" path="res://Resources/Attacks/Fire/Attack_Firebolt.tres" id="4_nwobs"]

@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="UnitData" format=3 uid="uid://bovhc3ee3w7lg"]
 
-[ext_resource type="Resource" uid="uid://cdtqcevwqes8r" path="res://Resources/Slimes/Slime_Ai.tres" id="1_h5f71"]
+[ext_resource type="Resource" uid="uid://cdtqcevwqes8r" path="res://Resources/Slimes/SlimeMelee_Ai.tres" id="1_h5f71"]
 [ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="2_1r04f"]
 [ext_resource type="Resource" uid="uid://ip56bamlye1p" path="res://Resources/Attacks/Physical/Attack_BodySlam.tres" id="3_tccj5"]
 [ext_resource type="Resource" uid="uid://b463a3rbct5e7" path="res://Resources/Slimes/PhysSlime_Stats.tres" id="4_h5f71"]

@@ -59,7 +59,7 @@ const DAMAGE_COLORS = {
 	DamageType.ICE: Color.LIGHT_SKY_BLUE,
 	}
 
-enum AreaShape { SQUARE, DIAMOND, CIRCLE }
+enum AreaShape { SQUARE, DIAMOND, LINE, CLEAVE }
 
 enum ShakeType { NONE, SMALL, MID, BIG }
 enum FreezeType { NONE, SMALL, MID, BIG }

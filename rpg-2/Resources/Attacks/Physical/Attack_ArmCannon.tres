@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://d1lk5xi4085ve"]
+
+[ext_resource type="AudioStream" uid="uid://bss7dbr2s2jts" path="res://Sound/SFX/Phys/Bonk.wav" id="1_jsarj"]
+[ext_resource type="Resource" uid="uid://bnmm20jbq830a" path="res://Resources/VFX/Attacks/Physical/SmallPhysicalHit.tres" id="2_e2dtk"]
+[ext_resource type="AudioStream" uid="uid://nkujbpqmrqoe" path="res://Sound/SFX/Earth/EM_EARTH_IMPACT_01.wav" id="3_jur1d"]
+[ext_resource type="Resource" uid="uid://baewjw836quug" path="res://Resources/VFX/Attacks/Physical/PhysicalHoldVFX.tres" id="4_wy50s"]
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="5_fktac"]
+[ext_resource type="Script" uid="uid://crrdlragv1ap1" path="res://Skills/ArmCannon.gd" id="6_jur1d"]
+[ext_resource type="Resource" uid="uid://bo3y8gmr7fltp" path="res://Resources/Surfaces/FireSurfaceData.tres" id="7_wy50s"]
+
+[resource]
+script = ExtResource("5_fktac")
+attack_name = "Arm Cannon"
+attack_desc = "Arm Cannon"
+mana_cost = 0.0
+requires_charge = true
+charge_type_needed = "Bombs"
+damage_type = 5
+target_type = 1
+attack_range = 3
+aoe_shape = 1
+aoe_range = 3
+skill_script = ExtResource("6_jur1d")
+knockback_distance = 1
+surface_to_create = ExtResource("7_wy50s")
+surface_duration = 3
+hold_vfx = ExtResource("4_wy50s")
+hit_vfx = ExtResource("2_e2dtk")
+hold_sfx = ExtResource("3_jur1d")
+hit_sfx = ExtResource("1_jsarj")
+use_screen_flash = true
+screen_shake_type = 1
+screen_freeze_type = 1
+metadata/_custom_type_script = "uid://dsax2bn7t2vd7"

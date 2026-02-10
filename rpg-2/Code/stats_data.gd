@@ -1,17 +1,21 @@
 extends Resource
 class_name Stats
 
-var active_buffs: Array = [] # Stores { "resource": BuffResource, "remaining": int }
-var caster_unit: Unit  # Store the person who applied the buff
-
 signal buffs_updated(active_buffs: Array)
+signal charges_updated(new_charges: Dictionary)
+signal cooldowns_updated() # Useful for graying out UI buttons
 signal request_log(message: String, color: Color)
 signal health_depleted
 signal health_changed(cur_health: float, max_health: float)
 signal stamina_changed(cur_stamina: float, max_stamina: float)
 signal mana_changed(cur_mana: float, max_mana: float)
+signal leveled_up(new_level: int)
 
-const BASE_LEVEL_XP: float = 100.0
+var active_buffs: Array = [] # Stores { "resource": BuffResource, "remaining": int }
+var caster_unit: Unit  # Store the person who applied the buff
+# Stores { "Attack_Name": remaining_turns }
+var attack_cooldowns: Dictionary = {}
+# Stores { "Charge_Name": count }
 
 # --- Identity ---
 @export_group("Identity")
@@ -25,6 +29,7 @@ const BASE_LEVEL_XP: float = 100.0
 @export var base_strength: float = 5.0
 @export var base_agility: float = 5.0
 @export var base_intelligence: float = 5.0
+@export var base_xp_value: int = 50
 
 @export_group("Combat Attributes")
 @export var base_crit_chance: float = 5.0 # Percentage
@@ -35,6 +40,11 @@ const BASE_LEVEL_XP: float = 100.0
 @export var base_accuracy: float = 95.0
 @export var base_graze_chance: float = 20.0 # Base 20%
 @export var base_graze_multiplier: float = 0.5 # 50% damage
+@export var special_charges: Dictionary = {
+	"Knives": 0,
+	"Bolts": 0,
+	"Bombs": 0,
+}
 
 @export_group("Spell Attributes")
 @export var base_spell_accuracy: float = 100.0
@@ -89,6 +99,7 @@ var mana: float = 0.0: set = _on_mana_set
 @export_multiline var description: String = "Description: Unknown"
 @export_multiline var lore: String = "Lore: Unknown"
 
+const BASE_LEVEL_XP: float = 100.0
 var level: int:
 	get(): return floor(max(1.0, sqrt(experience / BASE_LEVEL_XP) + 0.5))
 	
@@ -147,26 +158,37 @@ func add_buff(buff_res: BuffResource, is_graze: bool = false, caster: Unit = nul
 	var dur = buff_res.duration
 	if is_graze: dur = floori(dur / 2.0)
 	
-	# Check if THIS specific caster already has THIS buff on the target
-	#for b in active_buffs:
-	#	if b.resource.buff_name == buff_res.buff_name and b.get("caster") == caster:
-	#		b.remaining = max(b.remaining, dur)
-	#		return # Refresh and exit
+	for b in active_buffs:
+		if b.resource.buff_name == buff_res.buff_name:
+			# If it's the Stacking Poison, we ADD the stats instead of just refreshing
+			if buff_res.buff_name == "Toxin":
+				# We store 'stacks' in the dictionary to multiply the effect
+				b.stacks = b.get("stacks", 1) + 1
+				b.remaining = max(b.remaining, dur) # Also refresh duration
+				print("[Toxin] Stacked! Total stacks: %d" % b.stacks)
+			else:
+				# Normal behavior for other buffs
+				b.remaining = max(b.remaining, dur)
+				b.caster = caster
+			
+			recalculate_stats()
+			buffs_updated.emit(active_buffs)
+			return
+	
+	# New buff entry (initialize stacks to 1)
+	active_buffs.append({ 
+		"resource": buff_res, 
+		"remaining": dur,
+		"caster": caster,
+		"stacks": 1 
+	})
 	
 	# In your stats script, you might not have access to the CombatLog directly,
 	# so we can emit a signal or use a Global call.
 	var msg = buff_res.on_applied_message % character_name
-	_send_to_combat_log(msg, Color.ORANGE_RED if not buff_res.is_positive else Color.CYAN)
-	
-	# We now store the caster inside the dictionary
-	active_buffs.append({ 
-		"resource": buff_res, 
-		"remaining": dur,
-		"caster": caster 
-	})
-	
+	_send_to_combat_log(msg, Color.ORANGE_RED if not buff_res.is_positive else Color.GREEN_YELLOW)
+
 	print("[BUFF] Added %s for %d turns!" % [buff_res.buff_name, dur])
-	
 	# IMPORTANT: Update stats so +STR or +Agility buffs take effect now
 	recalculate_stats()
 	buffs_updated.emit(active_buffs)
@@ -196,6 +218,17 @@ func apply_turn_start_buffs(victim_unit: Unit, game_ref: Node) -> void:
 	if to_remove.size() > 0:
 		recalculate_stats()
 		buffs_updated.emit(active_buffs)
+	
+	# --- NEW: Process Cooldowns ---
+	var cd_changed = false
+	for attack_name in attack_cooldowns.keys():
+		attack_cooldowns[attack_name] -= 1
+		if attack_cooldowns[attack_name] <= 0:
+			attack_cooldowns.erase(attack_name)
+		cd_changed = true
+	
+	if cd_changed:
+		cooldowns_updated.emit()
 
 # Helper to find if a buff exists
 func _has_buff(b_name: String) -> bool:
@@ -227,6 +260,22 @@ func _get_modifier_sum(base_value: float, stat_key: String) -> float:
 				
 	return (base_value * mult_mod) + flat_mod
 
+# Helper for your Skills/Charges
+func add_charge(charge_name: String, amount: int = 1) -> void:
+	special_charges[charge_name] = special_charges.get(charge_name, 0) + amount
+	print("Added charge: %s (Total: %d)" % [charge_name, special_charges[charge_name]])
+	charges_updated.emit(special_charges) # Force UI refresh
+
+func has_charge(charge_name: String) -> bool:
+	return special_charges.get(charge_name, 0) > 0
+
+func consume_charge(charge_name: String) -> void:
+	if has_charge(charge_name):
+		special_charges[charge_name] -= 1
+		# We removed the erase() and the early return. 
+		# We want to emit the signal even if it just hit 0.
+		charges_updated.emit(special_charges)
+
 func take_damage(amount: float) -> void:
 	health -= amount
 
@@ -249,19 +298,53 @@ func get_resistance(type: Globals.DamageType) -> float:
 	
 func _send_to_combat_log(msg: String, color: Color):
 	request_log.emit(msg, color)
-	
+
+func get_curse_score(stack_modifier: float = 1.0) -> float:
+	var total_curses = 0.0
+	for b in active_buffs:
+		# Check the @export var is_positive from the resource
+		if not b.resource.is_positive:
+			# Count the buff itself (1)
+			total_curses += 1.0
+			
+			# Add negative stacks multiplied by the modifier
+			var stacks = b.get("stacks", 1)
+			if stacks > 1:
+				# Subtract 1 because the first stack is already counted in 'total_curses += 1'
+				total_curses += (stacks - 1) * stack_modifier
+				
+	return total_curses
+
 func debug_print_buffs() -> void:
 	print("=== DEBUG BUFFS FOR %s ===" % character_name)
-	if active_buffs.is_empty():
-		print("Empty (No active buffs)")
-	else:
-		for i in range(active_buffs.size()):
-			var b = active_buffs[i]
-			var caster_name = b.caster.name if b.get("caster") else "No Caster"
-			print("[%d] Name: %s | Caster: %s | Remaining: %d" % [
-				i, b.resource.buff_name, caster_name, b.remaining
-			])
-	print("===============================")
+	
+	var positive = []
+	var negative = []
+	
+	for b in active_buffs:
+		if b.resource.is_positive:
+			positive.append(b)
+		else:
+			negative.append(b)
+			
+	print("--- BOONS (+) ---")
+	if positive.is_empty(): print("  None")
+	for b in positive:
+		_print_buff_line(b)
+		
+	print("--- CURSES (-) ---")
+	if negative.is_empty(): print("  None")
+	for b in negative:
+		_print_buff_line(b)
+		
+	print("=====================")
+
+# Private helper to keep the code clean
+func _print_buff_line(b: Dictionary) -> void:
+	var caster_name = b.get("caster").name if b.get("caster") else "Env"
+	var stacks = b.get("stacks", 1)
+	var stack_str = " (x%d)" % stacks if stacks > 1 else ""
+	print("  [%s%s] | From: %s | Ends in: %d" % [b.resource.buff_name, stack_str, caster_name, b.remaining])
 # --- Setters ---
 
 func _on_health_set(value: float) -> void:
@@ -279,5 +362,11 @@ func _on_mana_set(value: float) -> void:
 	mana_changed.emit(mana, current_max_mana)
 
 func _on_experience_set(new_value: int) -> void:
+	var old_level = level
 	experience = new_value
 	recalculate_stats()
+	
+	if level > old_level:
+		print("Level Up! Now level %d" % level)
+		leveled_up.emit(level)
+		# You can emit a signal here for level-up VFX/SFX

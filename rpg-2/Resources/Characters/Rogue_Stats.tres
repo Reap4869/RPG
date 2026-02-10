@@ -10,4 +10,7 @@ background = "Urchin"
 character_class = "Rogue"
 base_agility = 7.0
 base_intelligence = 6.0
+base_max_health = 700.0
+base_max_stamina = 250.0
+base_max_mana = 250.0
 metadata/_custom_type_script = "uid://cbjkyqk7ij6cq"

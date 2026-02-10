@@ -79,7 +79,8 @@ func _setup_from_data() -> void:
 		equipped_attack = data.attacks[index]
 	elif data.default_attack: # Fallback for your old system
 		equipped_attack = data.default_attack
-
+	
+	stats.leveled_up.connect(_on_level_up)
 # --- Movement Logic ---
 
 func _process(delta: float) -> void:
@@ -120,6 +121,13 @@ func follow_path(new_path: PackedVector2Array, cost: float) -> void:
 		stats.stamina -= cost
 
 # --- Helper Functions ---
+func _on_level_up(_new_level: int):
+	# Create a visual effect
+	#var vfx = load("res://vfx/level_up_anim.tscn").instantiate()
+	#add_child(vfx)
+	# Play a sound
+	#game.play_sfx(level_up_sfx, global_position)
+	return
 
 func switch_attack(index: int) -> void:
 	if index >= 0 and index < data.attacks.size():

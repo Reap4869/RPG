@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BuffResource" format=3 uid="uid://bt48lsnkg70ap"]
+
+[ext_resource type="Texture2D" uid="uid://c87daqbadmb6f" path="res://icon.svg" id="1_smwlx"]
+[ext_resource type="Script" uid="uid://d0ybwy8s8axa5" path="res://Code/buff_data.gd" id="2_w12ny"]
+
+[resource]
+script = ExtResource("2_w12ny")
+buff_name = "Toxin"
+icon = ExtResource("1_smwlx")
+buff_type = 1
+on_applied_message = "%s is Poisoned!"
+on_expired_message = "%s is no longer poisoned."
+damage_type = 8
+dice_type = 4
+scaling_multiplier = 0.3
+metadata/_custom_type_script = "uid://d0ybwy8s8axa5"

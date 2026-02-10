@@ -1,8 +1,13 @@
 [gd_resource type="Resource" script_class="UnitData" format=3 uid="uid://c7u3ljbe5bf1"]
 
 [ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="1_6qyk3"]
-[ext_resource type="Resource" uid="uid://b73yaedct8wuh" path="res://Resources/Attacks/Fire/Attack_Firebolt.tres" id="2_j2rxv"]
+[ext_resource type="Resource" uid="uid://cn6t83j01um47" path="res://Resources/Attacks/Physical/Attack_LeechBite.tres" id="2_nftse"]
+[ext_resource type="Resource" uid="uid://dxqykdnnkx1an" path="res://Resources/Attacks/Physical/Attack_PoisonStab.tres" id="3_2884j"]
+[ext_resource type="Resource" uid="uid://cuk3qgvvvkw25" path="res://Resources/Attacks/Dark/Spell_FeastOfBlood.tres" id="3_jmcx3"]
+[ext_resource type="Resource" uid="uid://n40c2l4ggu1q" path="res://Resources/Attacks/Dark/Spell_PathOfShadows.tres" id="4_itmd7"]
 [ext_resource type="Resource" uid="uid://blde0shofo6hm" path="res://Resources/Characters/Rogue_Stats.tres" id="6_at41g"]
+[ext_resource type="Resource" uid="uid://dmhiivdiiofi" path="res://Resources/Attacks/Dark/Spell_Punition.tres" id="6_c6gnp"]
+[ext_resource type="Resource" uid="uid://dr2d0v4wc8oy3" path="res://Resources/Attacks/Dark/Spell_Dispel.tres" id="7_2884j"]
 [ext_resource type="Script" uid="uid://caug8a8g82wya" path="res://Code/unit_data.gd" id="7_ji38f"]
 [ext_resource type="Texture2D" uid="uid://1k63byfw7ewi" path="res://Art/RPG_SpriteSheet.png" id="8_8bn8v"]
 
@@ -13,5 +18,5 @@ is_player_controlled = true
 world_region = Rect2(192, 32, 32, 32)
 portrait_region = Rect2(192, 32, 32, 32)
 base_stats = ExtResource("6_at41g")
-attacks = Array[ExtResource("1_6qyk3")]([ExtResource("2_j2rxv")])
+attacks = Array[ExtResource("1_6qyk3")]([ExtResource("2_nftse"), ExtResource("3_2884j"), ExtResource("4_itmd7"), ExtResource("3_jmcx3"), ExtResource("6_c6gnp"), ExtResource("7_2884j")])
 metadata/_custom_type_script = "uid://caug8a8g82wya"

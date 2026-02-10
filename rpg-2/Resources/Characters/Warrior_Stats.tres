@@ -10,4 +10,12 @@ background = "Mercenary"
 character_class = "Warrior"
 base_strength = 7.0
 base_agility = 6.0
+special_charges = {
+"Bolts": 3,
+"Bombs": 3,
+"Knives": 3
+}
+base_max_health = 500.0
+base_max_stamina = 250.0
+base_max_mana = 250.0
 metadata/_custom_type_script = "uid://cbjkyqk7ij6cq"
