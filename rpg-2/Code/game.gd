@@ -16,6 +16,7 @@ signal attack_finished
 @onready var highlights = $World/CellHighlights
 @onready var main_ui = $UI/MainUI
 @onready var unit_info_panel = $UI/MainUI/UnitInfoPanel
+@onready var player_controller: PlayerController = $PlayerControler
 @export var footstep_sounds: Array[AudioStream] = []
 
 var step_interval: float = 0.22 # Minimum time between sounds
@@ -29,6 +30,9 @@ var current_attack_index: int = -1
 var active_hold_sfx: AudioStreamPlayer2D = null
 var active_hold_vfx: Node = null
 var is_attack_in_progress: bool = false # The "Lock"
+var all_units: Array[Unit]:
+	get:
+		return units_manager.get_all_units()
 
 var current_mode := InteractionMode.SELECT
 enum InteractionMode { SELECT, ATTACK }
@@ -45,6 +49,10 @@ func _ready() -> void:
 		$MusicPlayer.play()
 	$UI/MainUI.end_turn_requested.connect(_on_end_turn_button_pressed)
 	$UI/MainUI.attack_requested.connect(_on_attack_requested)
+	
+	# FORCE Exploration mode at the very start
+	Globals.current_mode = Globals.GameMode.EXPLORATION
+	#main_ui.show_combat_elements(false) # Hide end turn buttons, etc.
 	
 	if starting_map:
 		_initialize_battle(starting_map)
@@ -123,6 +131,38 @@ func _initialize_battle(map_resource: MapData) -> void:
 		objects_manager.object_spawned.connect(_on_object_registered)
 		
 	objects_manager.setup_objects(map_resource)
+	
+	# Ensure we stay in exploration
+	Globals.current_mode = Globals.GameMode.EXPLORATION
+	print("[SYSTEM] Map initialized. Mode: EXPLORATION")
+	
+	# Do NOT call _start_player_turn() here!
+	# Only set the active unit for the PlayerController to move
+	if player_team.get_child_count() > 0:
+		player_controller.active_unit = player_team.get_child(0)
+
+func start_combat(initiator: Unit):
+	if Globals.current_mode == Globals.GameMode.COMBAT: return
+	
+	print("[SYSTEM] Combat Started by: ", initiator.name)
+	Globals.current_mode = Globals.GameMode.COMBAT
+	
+	# Clear any highlights from exploration
+	if highlights:
+		highlights.active_unit = null
+		highlights.queue_redraw()
+		
+	_stop_all_unit_movement()
+	
+	_start_player_turn() # Or check initiative
+
+func _stop_all_unit_movement():
+	for unit in all_units:
+		unit.path.clear()
+		unit.is_moving = false
+		# Snap them to the nearest cell so they aren't stuck between tiles
+		var cell = map_manager.world_to_cell(unit.global_position)
+		unit.global_position = map_manager.cell_to_world(cell)
 
 # --- COMBAT LOGIC ---
 
@@ -334,6 +374,8 @@ func _execute_multi_target_attack(target_cells: Array[Vector2i]) -> void:
 	# 3. UNLOCK
 	print("[COMBAT] Execution complete. Cleaning up.")
 	is_attack_in_progress = false # UNLOCK INPUT
+	# Give the engine one frame to catch up
+	await get_tree().process_frame
 	# Only switch back to SELECT mode and update UI if it's the player's turn
 	if Globals.current_state == Globals.TurnState.PLAYER_TURN:
 		_set_interaction_mode(InteractionMode.SELECT)
@@ -625,7 +667,7 @@ func _handle_unit_death(unit: Unit) -> void:
 	
 	# Use a small call_deferred to ensure the unit is removed from the tree 
 	# before the manager checks if the group is empty
-	unit.get_parent().remove_child(unit)
+	#unit.get_parent().remove_child(unit)
 	unit.queue_free()
 	
 	# MANUALLY TRIGGER CHECK
@@ -937,6 +979,9 @@ func _on_end_turn_button_pressed() -> void:
 		_end_player_turn()
 
 func _end_player_turn() -> void:
+	# If we just won, don't start the enemy phase!
+	if Globals.current_mode == Globals.GameMode.EXPLORATION:
+		return
 	print("--- TURN ENDED ---")
 	Globals.current_state = Globals.TurnState.ENEMY_TURN
 	_set_active_unit(null)
@@ -996,7 +1041,24 @@ func _trigger_victory() -> void:
 	
 	print("VICTORY!")
 	_send_to_log("--- VICTORY! ---", Color.GOLD)
-	Globals.current_state = Globals.TurnState.VICTORY
+	#Globals.current_state = Globals.TurnState.VICTORY
+	
+	print("Combat Over! Returning to Exploration.")
+	_send_to_log("Area Cleared. Free movement enabled.", Color.GREEN)
+	
+	# Change mode back
+	Globals.current_mode = Globals.GameMode.EXPLORATION
+	
+	# Reset UI
+	#main_ui.show_combat_elements(false) # Hide skill bars/end turn
+	_set_active_unit(null)
+	
+	# Refresh player for exploration
+	player_team.replenish_all_stamina()
+	
+	# If you have a specific unit the player was using, re-assign to controller
+	if player_team.get_child_count() > 0:
+		player_controller.active_unit = player_team.get_child(0)
 
 func _trigger_game_over() -> void:
 	if Globals.current_state == Globals.TurnState.GAME_OVER: return

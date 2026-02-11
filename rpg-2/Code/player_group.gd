@@ -9,6 +9,7 @@ signal player_defeated
 func _ready() -> void:
 	# This built-in signal fires whenever a child is removed (queue_free)
 	child_exiting_tree.connect(_on_child_exiting)
+	
 
 func _on_child_exiting(_child: Node) -> void:
 	# We use 'callable.call_deferred' or a quick timer because queue_free 

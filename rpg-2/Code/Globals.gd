@@ -13,6 +13,9 @@ var play_footstep_sounds: bool = true
 const BASE_MOVE_COST = 20
 const TILE_SIZE = 32 # Helps avoid magic numbers like '32' everywhere
 
+enum GameMode { EXPLORATION, COMBAT }
+var current_mode = GameMode.EXPLORATION
+
 # --- ENUMS (The Game's Dictionary) ---
 enum TurnState { 
 	PLAYER_TURN, 

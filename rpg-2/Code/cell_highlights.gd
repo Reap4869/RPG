@@ -42,6 +42,10 @@ func _draw() -> void:
 	var draw_color = Color.CYAN if display_mode == "move" else Color.RED
 	draw_color.a = 0.3
 	
+	# --- NEW: Draw Enemy Vision Cones in Exploration ---
+	if Globals.current_mode == Globals.GameMode.EXPLORATION:
+		_draw_enemy_detection_cones()
+	
 	# 2. Draw Selection Base
 	var rect_pos = Vector2(main_cell * tile_size)
 	var rect_size = Vector2(active_unit.data.grid_size * tile_size)
@@ -99,6 +103,65 @@ func _draw_move_range(color: Color) -> void:
 		# Use the simpler math here:
 		var rect_pos = Vector2(cell * Globals.TILE_SIZE)
 		draw_rect(Rect2(rect_pos, tile_size_vec), color, true)
+
+func _draw_enemy_detection_cones() -> void:
+	var game = get_tree().get_first_node_in_group("Game")
+	if not game: return
+
+	for enemy in game.enemy_team.get_children():
+		if enemy is Unit and enemy.data.ai_behavior:
+			var ai = enemy.data.ai_behavior
+			var center = game.map_manager.world_to_cell(enemy.global_position)
+			
+			# 1. Draw Proximity Circle (Diamond/Square shape)
+			var prox_tiles = game._get_aoe_tiles(center, ai.proximity_radius, Globals.AreaShape.DIAMOND)
+			for tile in prox_tiles:
+				_draw_rect_at_cell(tile, Color(1, 0, 0, 0.2)) # Light Red
+			
+			# 2. Draw Vision Cone
+			# Check tiles within detection_radius to see if they are in the FOV
+			for x in range(-ai.detection_radius, ai.detection_radius + 1):
+				for y in range(-ai.detection_radius, ai.detection_radius + 1):
+					var target_cell = center + Vector2i(x, y)
+					if _is_in_vision_cone(center, target_cell, ai):
+						_draw_rect_at_cell(target_cell, Color(1, 1, 0, 0.15)) # Light Yellow
+
+func _is_in_vision_cone(origin: Vector2i, target: Vector2i, ai: SlimeAI) -> bool:
+	var dist = max(abs(origin.x - target.x), abs(origin.y - target.y))
+	if dist > ai.detection_radius or dist == 0: return false
+	
+	var dir_to_target = (Vector2(target) - Vector2(origin)).normalized()
+	return ai.facing_direction.dot(dir_to_target) >= 0.4
+
+func _draw_rect_at_cell(cell: Vector2i, color: Color):
+	var game = get_tree().get_first_node_in_group("Game")
+	var rect = Rect2(game.map_manager.cell_to_world(cell) - Vector2(16, 16), Vector2(32, 32))
+	draw_rect(rect, color)
+
+func _draw_cone_for_unit(origin: Vector2i, facing: Vector2, radius: int, fov: float, color: Color) -> void:
+	var tile_size = Globals.TILE_SIZE
+	
+	# Loop through a square area that contains the radius
+	for x in range(-radius, radius + 1):
+		for y in range(-radius, radius + 1):
+			var target_cell = origin + Vector2i(x, y)
+			
+			# 1. Range Check (Chebyshev or Euclidean, matching your AI logic)
+			var dist = max(abs(x), abs(y)) 
+			if dist > radius or dist == 0: continue
+			
+			if map_manager.is_within_bounds(target_cell):
+				# 2. Angle Check
+				var dir_to_cell = (Vector2(target_cell) - Vector2(origin)).normalized()
+				var angle = rad_to_deg(facing.angle_to(dir_to_cell))
+				
+				if abs(angle) <= (fov / 2.0):
+					# 3. LOS Check (Optional: Don't draw the cone behind walls)
+					if map_manager.is_line_clear(origin, target_cell):
+						var rect_pos = Vector2(target_cell * tile_size)
+						draw_rect(Rect2(rect_pos, Vector2(tile_size, tile_size)), color, true)
+						# Draw a subtle outline for the edge of the cone
+						draw_rect(Rect2(rect_pos, Vector2(tile_size, tile_size)), Color(color.r, color.g, color.b, 0.3), false, 1.0)
 
 func _calculate_move_range_cache() -> void:
 	var start_cell = map_manager.world_to_cell(active_unit.global_position)

@@ -12,6 +12,8 @@ signal movement_finished(unit: Unit, final_cell: Vector2i)
 var map_manager: MapManager # No @onready needed here if we set it in _ready
 var stats: Stats
 var equipped_attack: AttackResource
+var game_ref: Node = null
+var highlights_ref: Node2D = null
 
 # Movement state
 var path: PackedVector2Array = []
@@ -29,6 +31,8 @@ func _ready() -> void:
 	
 	# Faster, cleaner way to find the Manager
 	map_manager = get_tree().get_first_node_in_group("MapManager")
+	game_ref = get_tree().get_first_node_in_group("Game")
+	highlights_ref = get_tree().get_first_node_in_group("CellHighlights")
 	
 	# Safety check in case MapManager isn't in the tree yet
 	if not map_manager:
@@ -84,10 +88,29 @@ func _setup_from_data() -> void:
 # --- Movement Logic ---
 
 func _process(delta: float) -> void:
-	if not is_moving or path.is_empty():
-		return
+	# 1. Handle Combat/Path Movement (Your existing code)
+	if is_moving and not path.is_empty():
+		_process_movement(delta) # Move your existing movement logic here
 	
+	# 2. Handle Exploration Detection
+	if Globals.current_mode == Globals.GameMode.EXPLORATION:
+		# If we are an AI unit moving in exploration, tell highlights to redraw the cone
+		if highlights_ref:
+			highlights_ref.queue_redraw()
+		
+		if data and data.ai_behavior and not data.is_player_controlled:
+			if game_ref:
+				data.ai_behavior.check_detection(self, game_ref)
+
+
+# Helper to keep _process clean
+func _process_movement(delta: float):
 	var target_pos = path[path_index]
+	# Update facing direction for AI vision
+	var move_vec = (target_pos - global_position).normalized()
+	if move_vec.length() > 0.1 and data and data.ai_behavior:
+		data.ai_behavior.facing_direction = move_vec
+		
 	global_position = global_position.move_toward(target_pos, 200.0 * delta)
 	
 	if global_position.distance_to(target_pos) < 0.1:
@@ -107,7 +130,8 @@ func _process(delta: float) -> void:
 			var final_cell = map_manager.world_to_cell(global_position)
 			movement_finished.emit(self, final_cell)
 			path.clear()
-		
+
+
 func follow_path(new_path: PackedVector2Array, cost: float) -> void:
 	if new_path.is_empty():
 		return
@@ -116,10 +140,17 @@ func follow_path(new_path: PackedVector2Array, cost: float) -> void:
 	path_index = 0
 	is_moving = true
 	
+	# Determine direction for AI facing
+	var move_dir = (new_path[0] - global_position).normalized()
+	if data and data.ai_behavior:
+		data.ai_behavior.facing_direction = move_dir
+	
+		# If exploration, we just move without deducting
+	if Globals.current_mode == Globals.GameMode.COMBAT:
+		if stats:
+			stats.stamina -= cost
 	# Subtract the stamina cost immediately when movement starts
-	if stats:
-		stats.stamina -= cost
-
+	
 # --- Helper Functions ---
 func _on_level_up(_new_level: int):
 	# Create a visual effect
@@ -127,6 +158,7 @@ func _on_level_up(_new_level: int):
 	#add_child(vfx)
 	# Play a sound
 	#game.play_sfx(level_up_sfx, global_position)
+	print("You just Level up!")
 	return
 
 func switch_attack(index: int) -> void:
@@ -175,7 +207,7 @@ func leave_current_cells() -> void:
 	_set_occupancy(current_cell, false)
 
 # Call this AFTER finishing a move
-func occupy_new_cells() -> void:
+func occupy_new_cells(_unit: Unit = null, _cell: Vector2i = Vector2i.ZERO) -> void:
 	var current_cell = map_manager.world_to_cell(global_position)
 	_set_occupancy(current_cell, true)
 
@@ -189,3 +221,9 @@ func play_hit_flash() -> void:
 func take_damage(amount: int):
 	stats.health -= amount # If this line is missing, the health bar never moves!
 	play_hit_flash()
+	# NEW: If we are attacked in exploration, force start combat!
+	if Globals.current_mode == Globals.GameMode.EXPLORATION:
+		var game = get_tree().get_first_node_in_group("Game")
+		if game:
+			game.start_combat(self)
+			print("Combat started! You hit %s", stats.name)

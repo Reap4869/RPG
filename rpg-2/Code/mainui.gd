@@ -26,3 +26,8 @@ func _on_attack_requested(index: int) -> void:
 func update_buttons(unit: Unit) -> void:
 	# Simply tell the skill buttons node to refresh itself
 	skill_bar.update_buttons(unit)
+	
+#func show_combat_elements(visible: bool) -> void:
+	#end_turn_button.visible = visible
+	#skill_bar.visible = visible
+	# Perhaps show a "Combat Started!" banner if visible is true

@@ -8,7 +8,6 @@ func _ready() -> void:
 	add_to_group("CombatLog")
 	# Clear any placeholder text from the editor
 	rich_label.text = "" 
-	add_message("Battle Started!")
 
 # Standard message (one color)
 func add_message(text: String, color: Color = Color.WHITE) -> void:
