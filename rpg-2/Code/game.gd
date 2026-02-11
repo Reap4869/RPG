@@ -16,7 +16,8 @@ signal attack_finished
 @onready var highlights = $World/CellHighlights
 @onready var main_ui = $UI/MainUI
 @onready var unit_info_panel = $UI/MainUI/UnitInfoPanel
-@onready var player_controller: PlayerController = $PlayerControler
+@onready var player_controller = $PlayerController
+#var player_controller: Node = null
 @export var footstep_sounds: Array[AudioStream] = []
 
 var step_interval: float = 0.22 # Minimum time between sounds
@@ -40,6 +41,7 @@ enum InteractionMode { SELECT, ATTACK }
 const WORLD_VFX_SCENE = preload("uid://pc6usvw46jfj")
 
 func _ready() -> void:
+	add_to_group("Game")  # <-- ensure other nodes can find the Game node by group
 	if units_manager.player_group.has_signal("player_defeated"):
 		units_manager.player_group.player_defeated.connect(_trigger_game_over)
 	if units_manager.enemy_group.has_signal("enemies_defeated"):
@@ -138,11 +140,16 @@ func _initialize_battle(map_resource: MapData) -> void:
 	
 	# Do NOT call _start_player_turn() here!
 	# Only set the active unit for the PlayerController to move
-	if player_team.get_child_count() > 0:
+	if player_team.get_child_count() > 0 and player_controller:
 		player_controller.active_unit = player_team.get_child(0)
+	# ensure controller's game reference (optional, safe)
+	if player_controller.has_method("set") == false and player_controller.has_variable("game"):
+		player_controller.game = self
 
+# --- COMBAT TRANSITION ---
 func start_combat(initiator: Unit):
-	if Globals.current_mode == Globals.GameMode.COMBAT: return
+	if Globals.current_mode == Globals.GameMode.COMBAT:
+		return
 	
 	print("[SYSTEM] Combat Started by: ", initiator.name)
 	Globals.current_mode = Globals.GameMode.COMBAT
@@ -154,6 +161,25 @@ func start_combat(initiator: Unit):
 		
 	_stop_all_unit_movement()
 	
+	# If the initiator is a player character, make them the active/selected unit
+	if initiator and initiator.data and initiator.data.is_player_controlled:
+	# Update game-level active/selected unit (updates UI)
+		_set_active_unit(initiator)
+		_set_selected_unit(initiator)
+
+	# Sync PlayerController so input will route to the initiator
+		var pc = _get_player_controller()
+		if pc:
+			pc.active_unit = initiator
+			# ensure pc.game is set (some implementations expect this)
+			if pc.has_method("set"):
+				# no-op for safety; you can set pc.game = self if desired
+				pass
+			print("[SYSTEM] PlayerController synced to initiator:", pc, "->", initiator.name)
+		else:
+			print("[SYSTEM] Warning: PlayerController not found to sync active unit.")
+
+	# If initiator was an enemy or non-player, fallback selection happens in _start_player_turn
 	_start_player_turn() # Or check initiative
 
 func _stop_all_unit_movement():
@@ -507,7 +533,7 @@ func _apply_tick_damage(victim: Unit, amount: int, type: Globals.DamageType, buf
 		var final_amount = roundi(final_amount_raw * (1.0 - resist_pct))
 		
 		# --- EXPANDED CONSOLE LOG ---
-		var type_name = Globals.DamageType.keys()[type]
+		var _type_name = Globals.DamageType.keys()[type]
 		var stack_str = " (x%d Stacks)" % stack_multiplier if stack_multiplier > 1 else ""
 		
 		print("--- [TICK: %s%s] ---" % [buff_res.buff_name.to_upper(), stack_str])
@@ -856,62 +882,95 @@ func _get_footprint_distance(origin: Vector2i, size: Vector2i, target: Vector2i)
 			if d < shortest_dist:
 				shortest_dist = d
 	return shortest_dist
-
-func _get_aoe_tiles(center: Vector2i, aoe_range: int, shape: Globals.AreaShape, origin: Vector2i = Vector2i.ZERO) -> Array[Vector2i]:
-	var affected_tiles: Array[Vector2i] = []
-	# Range 0 or 1 is always just the target tile
-	if aoe_range <= 0:
-		return [center]
 	
-	# Calculate direction from attacker to the target tile
-	# This now allows (-1,-1), (1,1), etc.
-	var diff = center - origin
-	var dir = Vector2i(clampi(diff.x, -1, 1), clampi(diff.y, -1, 1))
+# --- AOE helper used by attacks, detection, visuals ---
+# center (Vector2i), radius (int), shape (Globals.AreaShape.*)
+# facing (Vector2) is used for LINE / CONE / CLEAVE (it should be normalized)
+# fov_deg used for CONE
+func _get_aoe_tiles(center: Vector2i, radius: int, shape := Globals.AreaShape.SQUARE, facing := Vector2.ZERO, fov_deg := 90.0) -> Array:
+	var tiles: Array = []
+
+	if radius <= 0:
+		return tiles
 
 	match shape:
-		Globals.AreaShape.LINE:
-			# Start from the center and move 'aoe_range' steps in 'dir'
-			for i in range(aoe_range):
-				affected_tiles.append(center + (dir * i))
-
-		Globals.AreaShape.CLEAVE:
-			affected_tiles.append(center)
-			# If dir is diagonal (e.g., 1,1), we want (1,0) and (0,1)
-			if abs(dir.x) == 1 and abs(dir.y) == 1:
-				affected_tiles.append(center - Vector2i(dir.x, 0))
-				affected_tiles.append(center - Vector2i(0, dir.y))
-			else:
-				# Normal cardinal rotation for Up/Down/Left/Right
-				var side_dir = Vector2i(-dir.y, dir.x) 
-				affected_tiles.append(center + side_dir)
-				affected_tiles.append(center - side_dir)
-				
-		Globals.AreaShape.SQUARE, Globals.AreaShape.DIAMOND:
+		Globals.AreaShape.SQUARE:
 			# To get Range 1 = 2x2, we need the loop to go from 0 to 1 (2 steps)
 			# To get Range 2 = 3x3, we need the loop to go from -1 to 1 (3 steps)
 			var start_offset: int
 			var end_offset: int
 
-			if aoe_range % 2 == 0: # EVEN (2, 4, 6...)
-				start_offset = -(aoe_range / 2) + 1
-				end_offset = (aoe_range / 2)
+			if radius % 2 == 0: # EVEN (2, 4, 6...)
+				start_offset = -(radius / 2) + 1
+				end_offset = (radius / 2)
 			else: # ODD (1, 3, 5...)
-				start_offset = -(aoe_range / 2)
-				end_offset = (aoe_range / 2)
+				start_offset = -(radius / 2)
+				end_offset = (radius / 2)
 
 			for x in range(start_offset, end_offset + 1):
 				for y in range(start_offset, end_offset + 1):
-					var cell = center + Vector2i(x, y)
-			
-					if shape == Globals.AreaShape.SQUARE:
-						affected_tiles.append(cell)
-					elif shape == Globals.AreaShape.DIAMOND:
-						# Manhattan distance check for diamond
-						if abs(x) + abs(y) <= (aoe_range / 2):
-							affected_tiles.append(cell)
-			pass
-						
-	return affected_tiles
+					#var cell = center + Vector2i(x, y)
+					tiles.append(center + Vector2i(x, y))
+
+		Globals.AreaShape.DIAMOND:
+			# Manhattan distance
+			for x in range(-radius, radius + 1):
+				for y in range(-radius, radius + 1):
+					if abs(x) + abs(y) <= radius:
+						tiles.append(center + Vector2i(x, y))
+
+		Globals.AreaShape.LINE:
+			# Straight line from center in facing direction
+			var dir = facing.normalized()
+			var dir_i = Vector2i(roundi(dir.x), roundi(dir.y))
+			if dir_i == Vector2i.ZERO:
+				dir_i = Vector2i.UP
+			for i in range(1, radius + 1):
+				tiles.append(center + dir_i * i)
+
+		Globals.AreaShape.CLEAVE:
+			# A wide short cone / semicircle in front: include tiles with positive dot and within radius (no strict angle)
+			var f = facing.normalized()
+			if f == Vector2.ZERO:
+				f = Vector2.UP
+			for x in range(-radius, radius + 1):
+				for y in range(-radius, radius + 1):
+					var offset = Vector2i(x, y)
+					if offset == Vector2i.ZERO: continue
+					if max(abs(x), abs(y)) > radius: continue
+					var t = center + offset
+					var dir_to = (Vector2(t) - Vector2(center)).normalized()
+					if f.dot(dir_to) > 0.0:
+						if map_manager.is_line_clear(center, t):
+							tiles.append(t)
+
+		Globals.AreaShape.CONE:
+			# True cone using angle. fov_deg is total angle.
+			var half_fov = fov_deg * 0.5
+			var fvec = facing.normalized()
+			if fvec == Vector2.ZERO:
+				fvec = Vector2.UP
+			for x in range(-radius, radius + 1):
+				for y in range(-radius, radius + 1):
+					var offset = Vector2i(x, y)
+					if offset == Vector2i.ZERO: continue
+					if max(abs(x), abs(y)) > radius: continue
+					var t = center + offset
+					var dir_to = (Vector2(t) - Vector2(center)).normalized()
+					var angle = rad_to_deg(fvec.angle_to(dir_to))
+					if abs(angle) <= half_fov:
+						# LOS check so cone won't go through walls (optional but usually desired)
+						if map_manager.is_line_clear(center, t):
+							tiles.append(t)
+
+		_:
+			# Fallback: square
+			for x in range(-radius, radius + 1):
+				for y in range(-radius, radius + 1):
+					if max(abs(x), abs(y)) <= radius:
+						tiles.append(center + Vector2i(x, y))
+
+	return tiles
 
 func apply_knockback(victim: Unit, direction: Vector2i, distance: int) -> void:
 	if distance <= 0: return
@@ -954,17 +1013,37 @@ func _start_player_turn() -> void:
 	_send_to_log("--- PLAYER TURN ---", Color.WHITE)
 	Globals.current_state = Globals.TurnState.PLAYER_TURN
 	
+	# If we already have an active unit which is a valid, living player-controlled Unit,
+	# keep it as the active one. Otherwise, select the first available player unit.
+	var keep_active := false
+	if active_unit and is_instance_valid(active_unit) and active_unit is Unit:
+		# Must be player-controlled and alive
+		if active_unit.data and active_unit.data.is_player_controlled and active_unit.stats and active_unit.stats.health > 0:
+			keep_active = true
+
+	if not keep_active:
+		select_player_unit()
+	
+	# Sync PlayerController.active_unit so input binds to the same unit
+	var pc = _get_player_controller()
+	if pc:
+		# only set if active_unit is a player, otherwise clear
+		if active_unit and active_unit.data and active_unit.data.is_player_controlled:
+			pc.active_unit = active_unit
+		else:
+			pc.active_unit = null
+	
 	# Loop through all player units to process their buffs/burns
 	for unit in player_team.get_children():
 		if unit is Unit:
-			_start_unit_turn(unit) # This triggers Burn damage!
-	
-	#map_manager.tick_surfaces()
-	#player_team.replenish_all_stamina()
-	
-	# NEW: Automatically select the first available player unit
-	select_player_unit()
-	
+			# Process start-of-turn buffs (these may change HP/states)
+			if unit.stats.has_method("apply_turn_start_buffs"):
+				unit.stats.apply_turn_start_buffs(unit, self)
+
+			# If a buff killed the unit at turn start, handle it
+			if unit.stats.health <= 0:
+				_handle_unit_death(unit)
+		
 	#Then for objects
 	#for obj in objects_manager.get_children():
 	#	if obj is WorldObject and obj.stats.has_method("apply_turn_start_buffs"):
@@ -1037,7 +1116,11 @@ func _check_end_conditions() -> void:
 		_trigger_game_over()
 
 func _trigger_victory() -> void:
+	# Only trigger victory if we are currently in COMBAT and not already ended
+	if Globals.current_mode != Globals.GameMode.COMBAT: return
 	if Globals.current_state == Globals.TurnState.VICTORY: return
+
+	Globals.current_state = Globals.TurnState.VICTORY
 	
 	print("VICTORY!")
 	_send_to_log("--- VICTORY! ---", Color.GOLD)
@@ -1061,11 +1144,15 @@ func _trigger_victory() -> void:
 		player_controller.active_unit = player_team.get_child(0)
 
 func _trigger_game_over() -> void:
+	if Globals.current_mode != Globals.GameMode.COMBAT: return
 	if Globals.current_state == Globals.TurnState.GAME_OVER: return
+
+	Globals.current_state = Globals.TurnState.GAME_OVER
 	
 	print("GAME OVER")
 	_send_to_log("--- DEFEAT... ---", Color.RED)
-	Globals.current_state = Globals.TurnState.GAME_OVER
+	# Change mode back
+	Globals.current_mode = Globals.GameMode.EXPLORATION
 
 # --- EFFECTS VFX SFX ---
 
@@ -1218,6 +1305,24 @@ func _spawn_damage_number(value: int, pos: Vector2, type: Globals.DamageType, re
 	
 	tween.finished.connect(label.queue_free)
 
+
+# Helper that finds & caches the PlayerController node robustly
+func _get_player_controller() -> Node:
+	if player_controller and is_instance_valid(player_controller):
+		return player_controller
+	# 1) direct child of Game
+	if has_node("PlayerController"):
+		player_controller = get_node("PlayerController")
+		return player_controller
+
+	# 2) under World (common layout)
+	if has_node("World/PlayerController"):
+		player_controller = get_node("Worlfd/PlayerController")
+		return player_controller
+
+	# 3) fallback to group lookup (if you add it)
+	player_controller = get_tree().get_first_node_in_group("PlayerController")
+	return player_controller
 # --- INPUT OVERRIDE (Fixing Space Bar) ---
 func _input(event):
 	if event.is_action_pressed("ui_accept"): 

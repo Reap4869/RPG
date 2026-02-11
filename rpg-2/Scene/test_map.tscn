@@ -76,7 +76,7 @@ position = Vector2(112, 48)
 surface_type = 3
 
 [node name="SpawnMarker7" parent="." unique_id=1692366907 instance=ExtResource("2_vgid3")]
-position = Vector2(656, 176)
+position = Vector2(368, 112)
 unit_data = ExtResource("10_akov2")
 
 [node name="SpawnMarker8" parent="." unique_id=1399749468 instance=ExtResource("2_vgid3")]

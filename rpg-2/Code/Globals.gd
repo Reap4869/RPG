@@ -62,7 +62,13 @@ const DAMAGE_COLORS = {
 	DamageType.ICE: Color.LIGHT_SKY_BLUE,
 	}
 
-enum AreaShape { SQUARE, DIAMOND, LINE, CLEAVE }
+enum AreaShape {
+	SQUARE,    # Chebyshev (max(|dx|,|dy|)) — square
+	DIAMOND,   # Manhattan (|dx| + |dy|)
+	LINE,      # Straight line in facing
+	CLEAVE,    # Frontal semicircle / cone-like wide short attack
+	CONE,      # Directional cone with fov angle
+}
 
 enum ShakeType { NONE, SMALL, MID, BIG }
 enum FreezeType { NONE, SMALL, MID, BIG }

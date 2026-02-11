@@ -39,6 +39,7 @@ Map=""
 MapManager=""
 Highlights=""
 Selector=""
+Game=""
 
 [gui]
 

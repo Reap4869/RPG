@@ -34,6 +34,10 @@ func _draw() -> void:
 	if Globals.show_cell_outlines:
 		_draw_grid()
 	
+		# --- NEW: Draw Enemy Vision Cones in Exploration ---
+	if Globals.current_mode == Globals.GameMode.EXPLORATION:
+		_draw_enemy_detection_cones()
+	
 	if not active_unit: 
 		return
 	
@@ -42,9 +46,6 @@ func _draw() -> void:
 	var draw_color = Color.CYAN if display_mode == "move" else Color.RED
 	draw_color.a = 0.3
 	
-	# --- NEW: Draw Enemy Vision Cones in Exploration ---
-	if Globals.current_mode == Globals.GameMode.EXPLORATION:
-		_draw_enemy_detection_cones()
 	
 	# 2. Draw Selection Base
 	var rect_pos = Vector2(main_cell * tile_size)
@@ -59,9 +60,10 @@ func _draw() -> void:
 		_draw_hover_target_highlight()
 		_draw_attack_range(Color(1, 0, 0, 0.3))
 	else:
-		_draw_move_range(Color(0, 0.5, 1, 0.3))
-		_draw_path_preview()
-		_draw_ghost_destination()
+		if Globals.current_mode == Globals.GameMode.COMBAT:
+			_draw_move_range(Color(0, 0.5, 1, 0.3))
+			_draw_path_preview()
+			_draw_ghost_destination()
 
 func set_active_unit(unit: Unit):
 	active_unit = unit
@@ -109,22 +111,20 @@ func _draw_enemy_detection_cones() -> void:
 	if not game: return
 
 	for enemy in game.enemy_team.get_children():
-		if enemy is Unit and enemy.data.ai_behavior:
+		if enemy is Unit and enemy.data and enemy.data.ai_behavior:
 			var ai = enemy.data.ai_behavior
 			var center = game.map_manager.world_to_cell(enemy.global_position)
-			
-			# 1. Draw Proximity Circle (Diamond/Square shape)
-			var prox_tiles = game._get_aoe_tiles(center, ai.proximity_radius, Globals.AreaShape.DIAMOND)
+			 
+			#1. Proximity square (Chebyshev) using AOE helper
+			var prox_tiles = game._get_aoe_tiles(center, ai.proximity_radius, Globals.AreaShape.SQUARE)
 			for tile in prox_tiles:
-				_draw_rect_at_cell(tile, Color(1, 0, 0, 0.2)) # Light Red
-			
-			# 2. Draw Vision Cone
-			# Check tiles within detection_radius to see if they are in the FOV
-			for x in range(-ai.detection_radius, ai.detection_radius + 1):
-				for y in range(-ai.detection_radius, ai.detection_radius + 1):
-					var target_cell = center + Vector2i(x, y)
-					if _is_in_vision_cone(center, target_cell, ai):
-						_draw_rect_at_cell(target_cell, Color(1, 1, 0, 0.15)) # Light Yellow
+				_draw_rect_at_cell(tile, Color(0.0, 0.502, 1.0, 0.2)) # Light Red
+
+			# 2. Vision cone using AOE helper (will respect LOS in the helper)
+			var facing_vec = ai.facing_direction.normalized()
+			var cone_tiles = game._get_aoe_tiles(center, ai.detection_radius, Globals.AreaShape.CONE, facing_vec, ai.field_of_view_angle)
+			for tile in cone_tiles:
+				_draw_rect_at_cell(tile, Color(0.0, 0.502, 1.0, 0.2)) # Light Yellow
 
 func _is_in_vision_cone(origin: Vector2i, target: Vector2i, ai: SlimeAI) -> bool:
 	var dist = max(abs(origin.x - target.x), abs(origin.y - target.y))

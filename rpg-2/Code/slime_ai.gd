@@ -3,39 +3,34 @@ class_name SlimeAI
 
 enum Personality { MELEE_FIRST, RANGED_FIRST }
 @export var behavior: Personality = Personality.MELEE_FIRST
-@export var detection_radius: int = 6
+@export var detection_radius: int = 3
 @export var field_of_view_angle: float = 90.0 # Total degrees of the cone
-@export var proximity_radius: int = 2 # Stealth-break radius (circular)
+@export var proximity_radius: int = 3 # Stealth-break radius (circular)
 var facing_direction := Vector2.DOWN
 
-func check_detection(unit: Unit, game: Node):
+func check_detection(unit: Unit, game: Node) -> void:
 	if Globals.current_mode != Globals.GameMode.EXPLORATION:
 		return
-	
+
 	var my_cell = game.map_manager.world_to_cell(unit.global_position)
-	
+
+	# 1. IMMEDIATE PROXIMITY CHECK (use AOE SQUARE to match attacks)
+	var prox_tiles = game._get_aoe_tiles(my_cell, proximity_radius, Globals.AreaShape.SQUARE)
 	for player in game.player_team.get_children():
 		var p_cell = game.map_manager.world_to_cell(player.global_position)
-		var dist = _get_chebyshev_dist(my_cell, p_cell)
-		
-		# 1. IMMEDIATE PROXIMITY CHECK (Hearing/Smell)
-		# No LOS or FOV required if you are this close
-		if dist <= proximity_radius:
+		if p_cell in prox_tiles:
 			print("[STEALTH] Proximity alert! Spotted by ", unit.name)
 			game.start_combat(unit)
 			return
 
-		# 2. VISION CONE CHECK
-		if dist <= detection_radius:
-			if game.map_manager.is_line_clear(my_cell, p_cell):
-				var dir_to_player = (Vector2(p_cell) - Vector2(my_cell)).normalized()
-				var dot = facing_direction.dot(dir_to_player)
-				
-				# 0.4 is roughly a 90-110 degree cone
-				if dot >= 0.4: 
-					print("[STEALTH] FOV alert! Spotted by ", unit.name)
-					game.start_combat(unit)
-					return
+	# 2. VISION CONE CHECK (use AOE CONE so visuals + detection align)
+	var cone_tiles = game._get_aoe_tiles(my_cell, detection_radius, Globals.AreaShape.CONE, unit.data.ai_behavior.facing_direction if unit.data and unit.data.ai_behavior else Vector2.DOWN, field_of_view_angle)
+	for player in game.player_team.get_children():
+		var p_cell = game.map_manager.world_to_cell(player.global_position)
+		if p_cell in cone_tiles:
+			print("[STEALTH] FOV alert! Spotted by ", unit.name)
+			game.start_combat(unit)
+			return
 
 func make_decision(unit: Unit, game: Node, map_manager: MapManager) -> void:
 	print("[AI LOGIC] Starting decision for ", unit.name)

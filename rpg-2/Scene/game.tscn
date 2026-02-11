@@ -22,7 +22,7 @@
 [ext_resource type="Script" uid="uid://bii62hovn12q7" path="res://Code/object_manager.gd" id="10_m52p7"]
 [ext_resource type="Script" uid="uid://djja4mhykonyn" path="res://Code/PlayerController.gd" id="20_5smqc"]
 
-[node name="Game" type="Node2D" unique_id=1683554374]
+[node name="Game" type="Node2D" unique_id=1683554374 groups=["Game"]]
 script = ExtResource("1_sagxc")
 starting_map = ExtResource("2_yjs1f")
 footstep_sounds = Array[AudioStream]([ExtResource("3_gji41"), ExtResource("4_5smqc"), ExtResource("5_mo8cs")])
@@ -60,7 +60,7 @@ script = ExtResource("2_feb5d")
 [node name="Selector" type="Node2D" parent="." unique_id=1175151578 groups=["Selector"]]
 script = ExtResource("5_thj8p")
 
-[node name="PlayerControler" type="Node2D" parent="." unique_id=1375969578]
+[node name="PlayerController" type="Node2D" parent="." unique_id=1375969578]
 script = ExtResource("20_5smqc")
 
 [node name="MusicPlayer" type="AudioStreamPlayer" parent="." unique_id=2080599410]

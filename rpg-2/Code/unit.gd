@@ -32,6 +32,8 @@ func _ready() -> void:
 	# Faster, cleaner way to find the Manager
 	map_manager = get_tree().get_first_node_in_group("MapManager")
 	game_ref = get_tree().get_first_node_in_group("Game")
+	if not game_ref:
+			game_ref = get_tree().root.find_child("Game", true, false)
 	highlights_ref = get_tree().get_first_node_in_group("CellHighlights")
 	
 	# Safety check in case MapManager isn't in the tree yet
@@ -226,4 +228,4 @@ func take_damage(amount: int):
 		var game = get_tree().get_first_node_in_group("Game")
 		if game:
 			game.start_combat(self)
-			print("Combat started! You hit %s", stats.name)
+			#print("Combat started! You hit %s", stats.name)
