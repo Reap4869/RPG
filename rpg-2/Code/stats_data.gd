@@ -89,10 +89,16 @@ var mana: float = 0.0: set = _on_mana_set
 @export_group("Resistances")
 @export var resistances: Dictionary[Globals.DamageType, float] = {
 	Globals.DamageType.PHYSICAL: 0.0,
-	Globals.DamageType.FIRE: 0.0,
 	Globals.DamageType.WATER: 0.0,
 	Globals.DamageType.EARTH: 0.0,
-	Globals.DamageType.AIR: 0.0
+	Globals.DamageType.FIRE: 0.0,
+	Globals.DamageType.AIR: 0.0,
+	Globals.DamageType.GRASS: 0.0,
+	Globals.DamageType.POISON: 0.0,
+	Globals.DamageType.ELECTRIC: 0.0,
+	Globals.DamageType.DARK: 0.0,
+	Globals.DamageType.LOVE: 0.0,
+	Globals.DamageType.ICE: 0.0,
 }
 
 @export_group("Misc")

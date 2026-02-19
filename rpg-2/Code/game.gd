@@ -452,7 +452,7 @@ func _execute_multi_target_attack(target_cells: Array[Vector2i]) -> void:
 		main_ui.skill_bar.update_buttons(null)
 	attack_finished.emit()
 
-func _apply_attack_damage(attack: AttackResource, attacker: Unit, victim: Node2D, impact_cell: Vector2i) -> void:
+func _apply_attack_damage(attack: AttackResource, attacker: Node2D, victim: Node2D, impact_cell: Vector2i) -> void:
 	# 1. Get Math and Result
 	var data = attack.get_damage_data(attacker.stats, victim.stats)
 	var damage = data[0]
@@ -522,7 +522,7 @@ func _apply_attack_damage(attack: AttackResource, attacker: Unit, victim: Node2D
 		else:
 			_handle_object_death(victim)
 
-func _apply_tick_damage(victim: Unit, amount: int, type: Globals.DamageType, buff_res: BuffResource = null, caster: Unit = null) -> void:
+func _apply_tick_damage(victim: Node2D, amount: int, type: Globals.DamageType, buff_res: BuffResource = null, caster: Node2D = null) -> void:
 	var base_amount = float(amount)
 	var dice_sum = 0
 	var stat_val = 0.0
@@ -597,7 +597,7 @@ func _apply_tick_damage(victim: Unit, amount: int, type: Globals.DamageType, buf
 		# 5. Apply to Health and UI
 		_process_tick_effects(victim, final_amount, type)
 
-func _process_tick_effects(victim: Unit, final_amount: int, type: Globals.DamageType):
+func _process_tick_effects(victim: Node2D, final_amount: int, type: Globals.DamageType):
 	var log_node = get_tree().get_first_node_in_group("CombatLog")
 	if final_amount < 0:
 		var heal_val = abs(final_amount)
@@ -769,9 +769,15 @@ func _handle_unit_death(unit: Unit) -> void:
 	#_check_end_conditions()
 	# Small delay to let the tree update, then check if someone won
 	get_tree().create_timer(0.1).timeout.connect(_check_end_conditions)
-	
 
-func _award_kill_xp(killed_unit: Unit) -> void:
+func _handle_object_death(obj: WorldObject) -> void:
+	_send_to_log("%s was destroyed!" % obj.name, Color.GRAY)
+	_award_kill_xp(obj)
+	unregister_object(obj)
+	obj.queue_free()
+	get_tree().create_timer(0.1).timeout.connect(_check_end_conditions)
+
+func _award_kill_xp(killed_unit: Node2D) -> void:
 	var xp_to_give = killed_unit.stats.base_xp_value
 	
 	# If an enemy is killed, we want to reward all players (alive or dead)
@@ -792,11 +798,6 @@ func award_quest_xp(amount: int) -> void:
 	for member in units_manager.player_group.get_children():
 		member.stats.experience += amount
 	_send_to_log("Quest Complete! Party gained %d XP." % amount, Color.GOLD)
-
-func _handle_object_death(obj: WorldObject) -> void:
-	_send_to_log("%s was destroyed!" % obj.name, Color.GRAY)
-	unregister_object(obj)
-	obj.queue_free()
 
 func _setup_camera(map_resource: MapData) -> void:
 	var map_width_px = map_resource.size.x * map_manager.cell_size.x
@@ -842,7 +843,7 @@ func _handle_movement(target_cell: Vector2i) -> void:
 	active_unit.follow_path(world_path, result[1])
 
 # The function that actually applies the "Hazard" logic
-func _on_unit_stepped_on_cell(cell: Vector2i, unit: Unit) -> void:
+func _on_unit_stepped_on_cell(cell: Vector2i, unit: Node2D) -> void:
 	# This uses the MapManager function we updated earlier to handle large units
 	map_manager.apply_surface_gameplay_effect(cell, unit)
 	
@@ -862,7 +863,7 @@ func _play_random_footstep() -> void:
 	# Use the SoundManager we built earlier
 	SoundManager.play_sfx(sound_to_play)
 
-func _on_unit_movement_finished(unit: Unit, final_cell: Vector2i) -> void:
+func _on_unit_movement_finished(unit: Node2D, final_cell: Vector2i) -> void:
 	# Clean up the signal connection
 	if unit.cell_entered.is_connected(_on_unit_stepped_on_cell):
 		unit.cell_entered.disconnect(_on_unit_stepped_on_cell)
@@ -1072,7 +1073,7 @@ func _get_aoe_tiles(center: Vector2i, radius: int, shape: Globals.AreaShape, ori
 	
 	return tiles
 
-func apply_knockback(victim: Unit, direction: Vector2i, distance: int) -> void:
+func apply_knockback(victim: Node2D, direction: Vector2i, distance: int) -> void:
 	if distance <= 0: return
 	
 	var current_cell = map_manager.world_to_cell(victim.global_position)

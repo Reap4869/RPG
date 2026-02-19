@@ -55,8 +55,10 @@ func spawn_object(object_scene: PackedScene, template: ObjectData, cell: Vector2
 	
 	add_child(new_obj)
 	
+	# FIX: Use cell_to_floor (the unit helper) so origin is at the tile's bottom-center
 	var map = get_tree().get_first_node_in_group("MapManager")
-	new_obj.global_position = map.cell_to_world(cell)
+	new_obj.global_position = map.cell_to_floor(cell) 
+	
 	return new_obj
 
 func clear_objects() -> void:
