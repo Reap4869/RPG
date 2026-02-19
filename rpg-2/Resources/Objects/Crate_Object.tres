@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ObjectData" format=3 uid="uid://6r1avnvj1cq1"]
+
+[ext_resource type="Script" uid="uid://b4crm2pqoycfw" path="res://Code/object_data.gd" id="1_dkv4x"]
+[ext_resource type="Texture2D" uid="uid://1k63byfw7ewi" path="res://Art/RPG_SpriteSheet.png" id="2_vk6al"]
+[ext_resource type="Resource" uid="uid://dpe0pickv450x" path="res://Resources/Objects/Object_Stats.tres" id="3_yu25x"]
+
+[resource]
+script = ExtResource("1_dkv4x")
+object_name = "Crate"
+sprite_texture = ExtResource("2_vk6al")
+world_region = Rect2(32, 64, 32, 32)
+stats = ExtResource("3_yu25x")
+metadata/_custom_type_script = "uid://b4crm2pqoycfw"

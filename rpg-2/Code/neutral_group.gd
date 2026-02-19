@@ -1,15 +1,12 @@
-# UnitGroup.gd
 extends Node2D
-class_name PlayerGroup
+class_name NeutralGroup
+signal neutrals_defeated
 
-signal player_defeated
-
-@export var team_name: String = "Player"
+@export var team_name: String = "Neutral"
 
 func _ready() -> void:
 	# This built-in signal fires whenever a child is removed (queue_free)
 	child_exiting_tree.connect(_on_child_exiting)
-	
 
 func _on_child_exiting(_child: Node) -> void:
 	# We use 'callable.call_deferred' or a quick timer because queue_free 
@@ -18,7 +15,7 @@ func _on_child_exiting(_child: Node) -> void:
 
 func _check_defeat() -> void:
 	if is_team_defeated():
-		player_defeated.emit()
+		neutrals_defeated.emit()
 
 func get_units() -> Array[Unit]:
 	var list: Array[Unit] = []
@@ -34,8 +31,7 @@ func replenish_all_stamina() -> void:
 func is_team_defeated() -> bool:
 	var alive_units = 0
 	for child in get_children():
-		if child is Unit:
-			# If the unit is visible and not deleted, it's alive
-			if child.visible and not child.is_queued_for_deletion():
-				alive_units += 1
+		# If the child is a unit AND it isn't currently being deleted
+		if child is Unit and not child.is_queued_for_deletion():
+			alive_units += 1
 	return alive_units == 0

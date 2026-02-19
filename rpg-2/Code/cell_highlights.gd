@@ -42,7 +42,7 @@ func _draw() -> void:
 		return
 	
 	var tile_size = Globals.TILE_SIZE
-	var main_cell = map_manager.world_to_cell(active_unit.global_position)
+	var main_cell = active_unit.get_cell()
 	var draw_color = Color.CYAN if display_mode == "move" else Color.RED
 	draw_color.a = 0.3
 	
@@ -164,7 +164,7 @@ func _draw_cone_for_unit(origin: Vector2i, facing: Vector2, radius: int, fov: fl
 						draw_rect(Rect2(rect_pos, Vector2(tile_size, tile_size)), Color(color.r, color.g, color.b, 0.3), false, 1.0)
 
 func _calculate_move_range_cache() -> void:
-	var start_cell = map_manager.world_to_cell(active_unit.global_position)
+	var start_cell = active_unit.get_cell()
 	var stamina = active_unit.stats.stamina
 	var radius = floori(stamina / float(Globals.BASE_MOVE_COST))
 	
@@ -203,7 +203,7 @@ func _calculate_move_range_cache() -> void:
 func _draw_attack_range(color: Color) -> void:
 	if not active_unit: return
 	
-	var unit_origin = map_manager.world_to_cell(active_unit.global_position)
+	var unit_origin = active_unit.get_cell()
 	var unit_size = active_unit.data.grid_size
 	var attack_range = active_unit.equipped_attack.attack_range
 	
@@ -276,7 +276,7 @@ func _draw_ghost_destination() -> void:
 	if hovered_cell != last_hovered_cell:
 		last_hovered_cell = hovered_cell
 		
-		var start_cell = map_manager.world_to_cell(active_unit.global_position)
+		var start_cell = active_unit.get_cell()
 		
 		# We pass 'active_unit' so the pathfinder knows to ignore the unit's current body
 		var result = map_manager.get_path_with_stamina(
@@ -300,17 +300,20 @@ func _draw_ghost_destination() -> void:
 	# 3. Draw logic (The "Land" point)
 	var destination_cell = cached_path[-1]
 	var tile_size = Globals.TILE_SIZE
-	var grid_local_pos = Vector2(destination_cell * tile_size)
-
+	
+	# We go back to the top-left as the base, like your old version
+	var top_left = map_manager.cell_to_floor(destination_cell)
+	
 	var visual_scale = active_unit.data.visual_scale
 	var region = active_unit.sprite.region_rect
 	
-	# Alignment Math
+	# Your original working alignment math:
 	var footprint_width = active_unit.data.grid_size.x * tile_size
 	var sprite_width = region.size.x * visual_scale
 	var centered_x = (footprint_width - sprite_width) / 2.0
-
-	var draw_pos = grid_local_pos + Vector2(centered_x, 0) + active_unit.sprite.offset
+	
+	# Combine top_left with your centered_x and the existing sprite offset
+	var draw_pos = top_left + Vector2(centered_x, 0) + (active_unit.sprite.offset * visual_scale)
 
 	draw_texture_rect_region(
 		active_unit.sprite.texture,
@@ -328,7 +331,7 @@ func _draw_hover_target_highlight() -> void:
 	if not attack: return
 	
 	# Before calculating AoE, check if we can even see the hovered cell
-	var attacker_cell = game_node.map_manager.world_to_cell(active_unit.global_position)
+	var attacker_cell = active_unit.get_cell()
 
 	if not game_node.map_manager.is_line_clear(attacker_cell, hovered_cell):
 		# Draw a "Blocked" highlight or just return
@@ -354,7 +357,8 @@ func _draw_hover_target_highlight() -> void:
 
 func _draw_occupant_highlight(occupant: Node2D) -> void:
 	var o_size = occupant.data.grid_size
-	var o_origin = map_manager.world_to_cell(occupant.global_position)
+	# If occupant is a Unit class, use get_cell(), otherwise world_to_cell
+	var o_origin = occupant.get_cell() if occupant is Unit else map_manager.world_to_cell(occupant.global_position)
 	var rect_pos = Vector2(o_origin * 32)
 	var rect_size = Vector2(o_size * 32)
 	

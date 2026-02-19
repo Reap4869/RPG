@@ -8,6 +8,8 @@ var show_cell_outlines := true
 var show_cell_ocupancy := false
 var play_footstep_sounds: bool = true
 
+enum UnitRole { PLAYER, ENEMY, NEUTRAL }
+var player_count: int = 1 # Set to 2 or 3 for future multiplayer
 
 # --- GAMEPLAY CONSTANTS ---
 const BASE_MOVE_COST = 20
@@ -15,6 +17,13 @@ const TILE_SIZE = 32 # Helps avoid magic numbers like '32' everywhere
 
 enum GameMode { EXPLORATION, COMBAT }
 var current_mode = GameMode.EXPLORATION
+var current_map_path: String = ""
+
+enum QuestState { NOT_STARTED, ACTIVE, COMPLETED, REWARDED }
+
+var quests = {
+	"slime_hunt": QuestState.NOT_STARTED
+}
 
 # --- ENUMS (The Game's Dictionary) ---
 enum TurnState { 
@@ -64,6 +73,7 @@ const DAMAGE_COLORS = {
 
 enum AreaShape {
 	SQUARE,    # Chebyshev (max(|dx|,|dy|)) — square
+	SQUARESIZE,
 	DIAMOND,   # Manhattan (|dx| + |dy|)
 	LINE,      # Straight line in facing
 	CLEAVE,    # Frontal semicircle / cone-like wide short attack

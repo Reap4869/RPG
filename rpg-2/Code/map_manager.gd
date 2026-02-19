@@ -22,8 +22,15 @@ func setup_map(data: MapData) -> void:
 		music_player.play()
 
 func load_map_from_resource(data: MapData) -> void:
+	# 1. Clean up old surfaces VFX and Data
+	for cell in grid_data:
+		_clear_surface_at_cell(cell)
+	grid_data.clear()
+
+	# 2. Clean up old visual map
 	if current_visual_map:
-		current_visual_map.queue_free()
+		current_visual_map.free() # Use free() here to force immediate removal
+		current_visual_map = null
 	
 	current_map_data = data
 	current_map_size = data.size
@@ -91,11 +98,11 @@ func _scan_tilemap_layers(map_root: Node) -> void:
 				continue # Skip further checks for this cell
 			
 			# 2. Check Ground Layer for Mud
-			var tile_data = ground_layer.get_cell_tile_data(cell)
-			if tile_data:
-				# Check the Custom Data Layer you made in the editor
-				if tile_data.get_custom_data("is_mud") == true:
-					current_map_data.terrain[cell] = MapData.TerrainType.MUD
+			#var tile_data = ground_layer.get_cell_tile_data(cell)
+			#if tile_data:
+			#	# Check the Custom Data Layer you made in the editor
+			#	if tile_data.get_custom_data("is_mud") == true:
+			#		current_map_data.terrain[cell] = MapData.TerrainType.MUD
 
 # Optimization: Only run this when something MOVES, not every frame
 func update_astar_weights():
@@ -114,8 +121,28 @@ func is_within_bounds(cell: Vector2i) -> bool:
 			cell.x < current_map_size.x and \
 			cell.y < current_map_size.y
 
+# Returns the TOP-LEFT corner of the cell.
+# Best for: Drawing grid lines, selection boxes, or logic-only math.
 func cell_to_world(cell: Vector2i) -> Vector2:
-	return Vector2(cell.x * cell_size.x, cell.y * cell_size.y) + Vector2(cell_size / 2)
+	return Vector2(cell.x * cell_size.x, cell.y * cell_size.y)
+
+# Returns the BOTTOM-CENTER coordinate of a cell (the "floor")
+## Best for: Unit global_position (feet), ghosts, and Y-sorting.
+func cell_to_floor(cell: Vector2i) -> Vector2:
+	var top_left = Vector2(cell.x * cell_size.x, cell.y * cell_size.y)
+	# X is middle (16px), Y is bottom (32px)
+	return top_left + Vector2(cell_size.x / 2.0, cell_size.y)
+
+# Returns the DEAD CENTER of the cell.
+# Best for: Casting VFX, circular explosions, or center-pivot projectiles.
+func cell_to_center(cell: Vector2i) -> Vector2:
+	return cell_to_world(cell) + (Vector2(cell_size) / 2.0)
+
+func cell_to_unit_pos(cell: Vector2i) -> Vector2:
+	# This returns: TopLeft + 16px right + 16px down (Exact Center)
+	# Or TopLeft + 16px right + 32px down (Exact Bottom)
+	# Let's use Exact Bottom (32) so Y-Sorting works perfectly.
+	return cell_to_world(cell) + Vector2(cell_size.x / 2.0, cell_size.y)
 
 func world_to_cell(world_pos: Vector2) -> Vector2i:
 	return Vector2i((world_pos / Vector2(cell_size)).floor())

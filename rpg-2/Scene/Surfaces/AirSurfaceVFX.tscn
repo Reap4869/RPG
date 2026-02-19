@@ -42,3 +42,4 @@ animations = [{
 sprite_frames = SubResource("SpriteFrames_2jfrf")
 frame_progress = 0.18350574
 speed_scale = 0.8
+centered = false

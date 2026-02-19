@@ -15,8 +15,10 @@
 script = ExtResource("7_spe5x")
 sprite_sheet = ExtResource("8_tk6e3")
 is_player_controlled = true
-world_region = Rect2(160, 32, 32, 32)
-portrait_region = Rect2(160, 32, 32, 32)
+role = 0
+world_region = Rect2(34, 346, 27, 38)
+portrait_region = Rect2(34, 346, 27, 38)
+sprite_offset = Vector2(-13.5, -38)
 base_stats = ExtResource("6_ihwyg")
 attacks = Array[ExtResource("1_uunar")]([ExtResource("2_5ft8y"), ExtResource("2_uyt7w"), ExtResource("3_ihwyg"), ExtResource("4_5ft8y"), ExtResource("4_sgx25"), ExtResource("7_cu8rt")])
 metadata/_custom_type_script = "uid://caug8a8g82wya"

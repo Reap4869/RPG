@@ -5,7 +5,7 @@
 [ext_resource type="Script" uid="uid://b6jmsnfng7b87" path="res://Code/camera.gd" id="2_feb5d"]
 [ext_resource type="Script" uid="uid://ee020yrkgy" path="res://Code/map_manager.gd" id="2_h8jt7"]
 [ext_resource type="Script" uid="uid://cc1vpy6650fp6" path="res://Code/world.gd" id="2_sagxc"]
-[ext_resource type="Resource" uid="uid://2f1flo6q5gko" path="res://Resources/TestMap.tres" id="2_yjs1f"]
+[ext_resource type="Resource" uid="uid://2f1flo6q5gko" path="res://Resources/Maps/TestMap.tres" id="2_yjs1f"]
 [ext_resource type="AudioStream" uid="uid://c44o0tgkrjmgf" path="res://Sound/SFX/Footstep1.mp3" id="3_gji41"]
 [ext_resource type="AudioStream" uid="uid://dldmb7mahxbhh" path="res://Sound/SFX/Footstep2.mp3" id="4_5smqc"]
 [ext_resource type="Script" uid="uid://ctarykl2b1wb2" path="res://Code/cell_highlights.gd" id="5_8f6ah"]
@@ -20,7 +20,9 @@
 [ext_resource type="Script" uid="uid://c8botpsepyty" path="res://Code/enemy_group.gd" id="9_0ka5k"]
 [ext_resource type="Resource" uid="uid://v7jx7jj6leja" path="res://Resources/Surfaces/PoisonSurfaceData.tres" id="9_5smqc"]
 [ext_resource type="Script" uid="uid://bii62hovn12q7" path="res://Code/object_manager.gd" id="10_m52p7"]
+[ext_resource type="Script" uid="uid://dsponjhepg5if" path="res://Code/neutral_group.gd" id="18_nnpbk"]
 [ext_resource type="Script" uid="uid://djja4mhykonyn" path="res://Code/PlayerController.gd" id="20_5smqc"]
+[ext_resource type="Script" uid="uid://bram3bcp6hu1d" path="res://Code/combat_input.gd" id="21_mo8cs"]
 
 [node name="Game" type="Node2D" unique_id=1683554374 groups=["Game"]]
 script = ExtResource("1_sagxc")
@@ -42,17 +44,25 @@ surface_rules = Dictionary[int, ExtResource("6_vy0et")]({
 script = ExtResource("5_8f6ah")
 
 [node name="Objects" type="Node2D" parent="World" unique_id=1223766123]
+y_sort_enabled = true
 script = ExtResource("10_m52p7")
 object_base_scene = ExtResource("8_yjs1f")
 
 [node name="UnitsManager" type="Node2D" parent="World" unique_id=1672220506]
+y_sort_enabled = true
 script = ExtResource("6_twwsd")
 
 [node name="PlayerGroup" type="Node2D" parent="World/UnitsManager" unique_id=619900324]
+y_sort_enabled = true
 script = ExtResource("7_c6b8m")
 
 [node name="EnemyGroup" type="Node2D" parent="World/UnitsManager" unique_id=665791807]
+y_sort_enabled = true
 script = ExtResource("9_0ka5k")
+
+[node name="NeutralGroup" type="Node2D" parent="World/UnitsManager" unique_id=51257583]
+y_sort_enabled = true
+script = ExtResource("18_nnpbk")
 
 [node name="Camera" type="Camera2D" parent="." unique_id=819448913]
 script = ExtResource("2_feb5d")
@@ -62,6 +72,9 @@ script = ExtResource("5_thj8p")
 
 [node name="PlayerController" type="Node2D" parent="." unique_id=1375969578]
 script = ExtResource("20_5smqc")
+
+[node name="CombatInput" type="Node2D" parent="." unique_id=1809653026]
+script = ExtResource("21_mo8cs")
 
 [node name="MusicPlayer" type="AudioStreamPlayer" parent="." unique_id=2080599410]
 

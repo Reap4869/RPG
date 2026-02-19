@@ -10,6 +10,7 @@
 script = ExtResource("2_1es7s")
 attack_name = "Staff Hit"
 mana_cost = 0.0
+aoe_range = 0
 hold_vfx = ExtResource("2_bp4a7")
 hit_vfx = ExtResource("1_1es7s")
 hold_sfx = ExtResource("4_3l0hq")

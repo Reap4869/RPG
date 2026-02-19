@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="UnitData" format=3 uid="uid://co5wficsuevf8"]
+
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="1_ur6ka"]
+[ext_resource type="Resource" uid="uid://du7b5cnun8p80" path="res://Resources/Attacks/Physical/Attack_StaffHit.tres" id="2_i0sqc"]
+[ext_resource type="Resource" uid="uid://y780xeeg5058" path="res://Resources/Characters/Elder_Stats.tres" id="3_3h0p8"]
+[ext_resource type="Script" uid="uid://caug8a8g82wya" path="res://Code/unit_data.gd" id="9_p8mlq"]
+[ext_resource type="Texture2D" uid="uid://1k63byfw7ewi" path="res://Art/RPG_SpriteSheet.png" id="10_dtny1"]
+
+[resource]
+script = ExtResource("9_p8mlq")
+sprite_sheet = ExtResource("10_dtny1")
+role = 2
+world_region = Rect2(160, 0, 32, 32)
+portrait_region = Rect2(160, 0, 32, 32)
+base_stats = ExtResource("3_3h0p8")
+attacks = Array[ExtResource("1_ur6ka")]([ExtResource("2_i0sqc")])
+metadata/_custom_type_script = "uid://caug8a8g82wya"

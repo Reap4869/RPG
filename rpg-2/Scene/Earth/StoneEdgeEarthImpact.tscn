@@ -49,4 +49,3 @@ animations = [{
 sprite_frames = SubResource("SpriteFrames_2jfrf")
 frame = 4
 frame_progress = 1.0
-offset = Vector2(0, -11)

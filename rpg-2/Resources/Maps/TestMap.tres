@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="MapData" format=3 uid="uid://2f1flo6q5gko"]
+
+[ext_resource type="Script" uid="uid://caug8a8g82wya" path="res://Code/unit_data.gd" id="1_oxb0u"]
+[ext_resource type="PackedScene" uid="uid://cdq7vqhovmx06" path="res://Scene/Maps/test_map.tscn" id="2_oxb0u"]
+[ext_resource type="PackedScene" uid="uid://cghpi6vcsxqqp" path="res://Scene/object.tscn" id="3_tv2b4"]
+[ext_resource type="Script" uid="uid://b4crm2pqoycfw" path="res://Code/object_data.gd" id="4_o23a5"]
+[ext_resource type="Script" uid="uid://fd8qkdrxp5y0" path="res://Code/map_data.gd" id="5_rm5be"]
+[ext_resource type="PackedScene" uid="uid://dbgtqpkonro6p" path="res://Scene/unit.tscn" id="6_am6m1"]
+
+[resource]
+script = ExtResource("5_rm5be")
+map_scene = ExtResource("2_oxb0u")
+unit_scene = ExtResource("6_am6m1")
+object_base_scene = ExtResource("3_tv2b4")
+metadata/_custom_type_script = "uid://fd8qkdrxp5y0"

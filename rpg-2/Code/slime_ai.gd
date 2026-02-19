@@ -5,7 +5,7 @@ enum Personality { MELEE_FIRST, RANGED_FIRST }
 @export var behavior: Personality = Personality.MELEE_FIRST
 @export var detection_radius: int = 3
 @export var field_of_view_angle: float = 90.0 # Total degrees of the cone
-@export var proximity_radius: int = 3 # Stealth-break radius (circular)
+@export var proximity_radius: int = 1 # Stealth-break radius (circular)
 var facing_direction := Vector2.DOWN
 
 func check_detection(unit: Unit, game: Node) -> void:
@@ -24,7 +24,17 @@ func check_detection(unit: Unit, game: Node) -> void:
 			return
 
 	# 2. VISION CONE CHECK (use AOE CONE so visuals + detection align)
-	var cone_tiles = game._get_aoe_tiles(my_cell, detection_radius, Globals.AreaShape.CONE, unit.data.ai_behavior.facing_direction if unit.data and unit.data.ai_behavior else Vector2.DOWN, field_of_view_angle)
+	var ai_facing = unit.data.ai_behavior.facing_direction # e.g. Vector2.DOWN
+	
+	# Pass Vector2i.ZERO for origin, but pass the actual facing vector to the end
+	var cone_tiles = game._get_aoe_tiles(
+		my_cell, 
+		detection_radius, 
+		Globals.AreaShape.CONE, 
+		Vector2i.ZERO, 
+		field_of_view_angle, 
+		ai_facing # This is the facing_override
+	)
 	for player in game.player_team.get_children():
 		var p_cell = game.map_manager.world_to_cell(player.global_position)
 		if p_cell in cone_tiles:

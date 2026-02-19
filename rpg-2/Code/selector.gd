@@ -30,7 +30,7 @@ func _process(_delta):
 		
 		if occupant is Unit:
 			# FIX: Use 'occupant' instead of 'unit'
-			final_box_cell = map_manager.world_to_cell(occupant.global_position)
+			final_box_cell = occupant.get_cell()
 			new_size = occupant.data.grid_size
 		elif occupant is WorldObject:
 			# SNAP: Objects also need to be snapped to their top-left origin
@@ -53,3 +53,9 @@ func _draw():
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		cell_clicked.emit(current_cell, event.button_index)
+		
+func set_cursor(cell: Vector2i) -> void:
+	global_position = map_manager.cell_to_world(cell)
+	# optionally set sprite/visual state (selected color)
+	current_cell = cell
+	cell_hovered.emit(cell)

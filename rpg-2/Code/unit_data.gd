@@ -7,6 +7,7 @@ class_name UnitData
 
 @export_group("Alignment")
 @export var is_player_controlled: bool = false
+@export var role: Globals.UnitRole = Globals.UnitRole.ENEMY
 
 @export_group("Regions")
 @export var world_region: Rect2    # The body on the map

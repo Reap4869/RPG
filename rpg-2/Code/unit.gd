@@ -18,10 +18,8 @@ var highlights_ref: Node2D = null
 # Movement state
 var path: PackedVector2Array = []
 var path_index := 0
-var is_moving := false
-var selected := false: 
-	set(value):
-		selected = value
+var is_moving: bool = false
+var selected: bool = false
 
 
 # --- Initialization ---
@@ -55,27 +53,30 @@ func _setup_from_data() -> void:
 		stats = data.base_stats.duplicate()
 		stats.setup_stats()
 
-	# 2. Setup Visuals (Basic)
+	# 2. Setup Visuals
 	if data.sprite_sheet:
 		sprite.texture = data.sprite_sheet
 		sprite.region_enabled = true
 		sprite.region_rect = data.world_region 
 		sprite.scale = Vector2(data.visual_scale, data.visual_scale)
 	
-	# . Calculate Final Offset (Combine "Tall Hero" and "Large Unit" logic)
-	var final_offset = data.sprite_offset # Start with the .tres value
+	# AUTOMATION: Calculate offset based on world_region size
+	var w = data.world_region.size.x
+	var h = data.world_region.size.y
 	
-	# Add shift if the unit occupies more than 1x1 cells
+	# This puts the pivot at the bottom-center of the sprite
+	var auto_offset = Vector2(-w / 2.0, -h)
+	
+	# Apply logic for 2x2 or 3x3 units
 	if data.grid_size.x > 1 or data.grid_size.y > 1:
-		# For 32px tiles: 2x2 moves +16px, 3x3 moves +32px
 		var shift = (Vector2(data.grid_size) - Vector2.ONE) * 16.0
-		final_offset += shift
+		auto_offset += shift
 
-	# Apply the combined offset
-	sprite.offset = final_offset
-	collision_shape.position = final_offset * data.visual_scale
+	sprite.offset = auto_offset
 	
-	#  Handle Collision Size & Skills
+	# Move collision to the middle of the sprite's calculated height
+	collision_shape.position = Vector2(0, (auto_offset.y / 2) * data.visual_scale)
+	
 	_update_collision_to_match_region()
 	
 	# 3. Setup Attacks
@@ -87,6 +88,20 @@ func _setup_from_data() -> void:
 		equipped_attack = data.default_attack
 	
 	stats.leveled_up.connect(_on_level_up)
+
+# HELPER: Use this instead of map_manager.world_to_cell(unit.global_position)
+func get_cell() -> Vector2i:
+	# We subtract a few pixels (8) from the Y position before calculating.
+	# This ensures that even if the feet are on the bottom line, 
+	# Godot picks the correct tile.
+	return map_manager.world_to_cell(global_position - Vector2(0, 8))
+
+# HELPER: Use this to teleport units safely
+func snap_to_cell(cell: Vector2i) -> void:
+	if not map_manager: return
+	# Directly set to the floor position
+	global_position = map_manager.cell_to_unit_pos(cell)
+
 # --- Movement Logic ---
 
 func _process(delta: float) -> void:
@@ -117,7 +132,7 @@ func _process_movement(delta: float):
 	
 	if global_position.distance_to(target_pos) < 0.1:
 		# --- NEW: Trigger surface effect for the cell we just reached ---
-		var reached_cell = map_manager.world_to_cell(target_pos)
+		var reached_cell = get_cell()
 		# --- TRIGGER SOUNDS AND EFFECTS ---
 		cell_entered.emit(reached_cell)
 		
@@ -126,11 +141,10 @@ func _process_movement(delta: float):
 		# Check if we finished the whole path
 		if path_index >= path.size():
 			is_moving = false
-			# Snap to exact pixel center of the tile
-			global_position = target_pos 
-			
-			var final_cell = map_manager.world_to_cell(global_position)
-			movement_finished.emit(self, final_cell)
+			# IMPORTANT: Use snap_to_cell here to ensure the final 
+			# position is the FLOOR, not the CENTER.
+			snap_to_cell(reached_cell)
+			movement_finished.emit(self, reached_cell)
 			path.clear()
 
 
@@ -198,6 +212,15 @@ func _update_collision_to_match_region() -> void:
 
 func set_selected(value: bool) -> void:
 	selected = value
+	# Update visuals for selection (example; adjust to your node names)
+	if selected:
+		# show selection visuals, e.g. highlight sprite or outline
+		if sprite:
+			sprite.modulate = Color(1,1,1,1) # example
+	else:
+		# hide selection visuals / reset
+		if sprite:
+			sprite.modulate = Color(1,1,1,1) # reset as appropriate
 
 func replenish_stamina() -> void:
 	if stats:
@@ -205,12 +228,12 @@ func replenish_stamina() -> void:
 
 # Call this BEFORE starting a move
 func leave_current_cells() -> void:
-	var current_cell = map_manager.world_to_cell(global_position)
+	var current_cell = get_cell()
 	_set_occupancy(current_cell, false)
 
 # Call this AFTER finishing a move
 func occupy_new_cells(_unit: Unit = null, _cell: Vector2i = Vector2i.ZERO) -> void:
-	var current_cell = map_manager.world_to_cell(global_position)
+	var current_cell = get_cell()
 	_set_occupancy(current_cell, true)
 
 func play_hit_flash() -> void:

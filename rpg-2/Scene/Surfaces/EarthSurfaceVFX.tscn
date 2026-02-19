@@ -39,5 +39,7 @@ animations = [{
 }]
 
 [node name="Surface" type="AnimatedSprite2D" unique_id=1915498283]
+z_index = -1
 sprite_frames = SubResource("SpriteFrames_2jfrf")
 frame_progress = 0.06818834
+centered = false

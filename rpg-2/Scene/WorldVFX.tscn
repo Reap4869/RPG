@@ -3,4 +3,6 @@
 [ext_resource type="Script" uid="uid://djbtfpdb503bm" path="res://Code/vfx.gd" id="1_0i1ai"]
 
 [node name="WorldVfx" type="Node2D" unique_id=418050464]
+z_index = 1
+y_sort_enabled = true
 script = ExtResource("1_0i1ai")

@@ -32,7 +32,7 @@ enum HitResult { MISS, GRAZE, HIT, CRIT }
 @export var max_targets: int = 1 # New: How many times can we click?
 @export var attack_range: int = 1
 @export var aoe_shape: Globals.AreaShape = Globals.AreaShape.SQUARE
-@export var aoe_range: int = 0 # If SINGLE, we just leave this at 0
+@export var aoe_range: int = 0 # If SINGLE er leave at 0
 @export var has_projectile: bool = false
 @export var projectile_speed: float = 200.0
 @export var is_healing: bool = false

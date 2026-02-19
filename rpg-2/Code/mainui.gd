@@ -7,11 +7,22 @@ signal end_turn_requested
 @onready var skill_bar: GridContainer = %SkillBar
 @onready var end_turn_button: Button = %EndTurn
 @onready var gm_tools: CheckBox = %GMTools
+@onready var dialogue_panel = %DialoguePanel
+@onready var dialogue_text = %Message
+@onready var dialogue_name = %Name
 
 func _ready() -> void:
 	end_turn_button.pressed.connect(_on_end_turn_pressed)
 	gm_tools.toggled.connect(_on_gm_toggle_toggled)
 	skill_bar.attack_requested.connect(_on_attack_requested)
+
+func show_dialogue(npc_name: String, message: String):
+	dialogue_name.text = npc_name
+	dialogue_text.text = message
+	dialogue_panel.visible = true
+
+func hide_dialogue():
+	dialogue_panel.visible = false
 
 func _on_end_turn_pressed() -> void:
 	end_turn_requested.emit()

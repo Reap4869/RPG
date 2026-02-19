@@ -5,8 +5,10 @@
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_jbou1"]
 resource_local_to_scene = true
+size = Vector2(18, 16)
 
 [node name="Unit" type="Node2D" unique_id=2013316549]
+y_sort_enabled = true
 script = ExtResource("1_btf8p")
 
 [node name="Area2D" type="Area2D" parent="." unique_id=40412350]
@@ -15,6 +17,8 @@ script = ExtResource("1_btf8p")
 shape = SubResource("RectangleShape2D_jbou1")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1503509444]
+y_sort_enabled = true
 texture = ExtResource("2_jbou1")
+centered = false
 region_enabled = true
-region_rect = Rect2(32, 0, 32, 32)
+region_rect = Rect2(0, 354, 30, 30)

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="UnitData" format=3 uid="uid://e066f080f3qw"]
+
+[ext_resource type="Script" uid="uid://dsax2bn7t2vd7" path="res://Code/attack_data.gd" id="1_1mgal"]
+[ext_resource type="Resource" uid="uid://du7b5cnun8p80" path="res://Resources/Attacks/Physical/Attack_StaffHit.tres" id="2_ypltn"]
+[ext_resource type="Resource" uid="uid://cq5csdc1rjxhh" path="res://Resources/Characters/GateGuard_Stats.tres" id="3_1mgal"]
+[ext_resource type="Script" uid="uid://caug8a8g82wya" path="res://Code/unit_data.gd" id="4_2jn37"]
+[ext_resource type="Texture2D" uid="uid://1k63byfw7ewi" path="res://Art/RPG_SpriteSheet.png" id="5_qug2k"]
+
+[resource]
+script = ExtResource("4_2jn37")
+sprite_sheet = ExtResource("5_qug2k")
+role = 2
+world_region = Rect2(192, 0, 32, 32)
+portrait_region = Rect2(192, 0, 32, 32)
+base_stats = ExtResource("3_1mgal")
+attacks = Array[ExtResource("1_1mgal")]([ExtResource("2_ypltn")])
+metadata/_custom_type_script = "uid://caug8a8g82wya"

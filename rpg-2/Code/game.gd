@@ -12,12 +12,13 @@ signal attack_finished
 @onready var objects_manager = $World/Objects
 @onready var player_team: PlayerGroup = $World/UnitsManager/PlayerGroup
 @onready var enemy_team: EnemyGroup = $World/UnitsManager/EnemyGroup
+@onready var neutral_team: NeutralGroup = $World/UnitsManager/NeutralGroup
 @onready var selector = $Selector
 @onready var highlights = $World/CellHighlights
 @onready var main_ui = $UI/MainUI
 @onready var unit_info_panel = $UI/MainUI/UnitInfoPanel
+@onready var combat_input = $CombatInput
 @onready var player_controller = $PlayerController
-#var player_controller: Node = null
 @export var footstep_sounds: Array[AudioStream] = []
 
 var step_interval: float = 0.22 # Minimum time between sounds
@@ -34,7 +35,7 @@ var is_attack_in_progress: bool = false # The "Lock"
 var all_units: Array[Unit]:
 	get:
 		return units_manager.get_all_units()
-
+var movement_history: Array[Vector2i] = []
 var current_mode := InteractionMode.SELECT
 enum InteractionMode { SELECT, ATTACK }
 
@@ -52,6 +53,10 @@ func _ready() -> void:
 	$UI/MainUI.end_turn_requested.connect(_on_end_turn_button_pressed)
 	$UI/MainUI.attack_requested.connect(_on_attack_requested)
 	
+	combat_input.cursor_moved.connect(_on_cursor_moved)
+	combat_input.confirm.connect(_on_combat_confirm)
+	combat_input.cancel.connect(_on_combat_cancel)
+	
 	# FORCE Exploration mode at the very start
 	Globals.current_mode = Globals.GameMode.EXPLORATION
 	#main_ui.show_combat_elements(false) # Hide end turn buttons, etc.
@@ -60,75 +65,21 @@ func _ready() -> void:
 		_initialize_battle(starting_map)
 	else:
 		print("Warning: No starting_map assigned!")
-
-# --- INPUT HANDLING ---
-func hide_debug_panel() -> void:
-	var panel = $UI/MainUI/DebugPanel
-	panel.visible = !panel.visible
-
-func select_player_unit() -> void:
-	# 1. Find the player unit
-	var units = player_team.get_children()
-	if units.size() == 0:
-		return
-		
-	var unit_to_select = units[0]
-	
-	# 2. Select it (updates UI and Highlights)
-	_set_active_unit(unit_to_select)
-	
-	# 3. Move Camera and Clamp it
-	var cam = get_viewport().get_camera_2d()
-	if cam:
-		cam.global_position = unit_to_select.global_position
-		if cam.has_method("force_clamp"):
-			cam.force_clamp()
-			
-
-func _on_selector_clicked(cell: Vector2i, button: int) -> void:
-	if is_attack_in_progress: return # Don't allow canceling mid-animation
-		
-	if Globals.current_state != Globals.TurnState.PLAYER_TURN:
-		return
-
-	if button == MOUSE_BUTTON_LEFT:
-		if current_mode == InteractionMode.ATTACK:
-			_handle_attack_input(cell)
-		else:
-			_handle_selection(cell)
-	elif button == MOUSE_BUTTON_RIGHT:
-		# If we have an active player unit, handle their movement
-		if active_unit and active_unit.data.is_player_controlled:
-			if current_mode == InteractionMode.ATTACK:
-				var attack = active_unit.equipped_attack
-				_stop_hold_effects()
-				main_ui.skill_bar.set_button_text(current_attack_index, attack.attack_name)
-				_set_interaction_mode(InteractionMode.SELECT)
-				multi_target_selection.clear()
-			else:
-				_handle_movement(cell)
-				
-
 # --- INITIALIZATION ---
 
 func _initialize_battle(map_resource: MapData) -> void:
 	# 1. Clear the "Boss's" record
 	occupancy_grid.clear()
-	
 	# 2. Tell the MapManager to build the walls and start the music
 	map_manager.setup_map(map_resource)
-	
 	# 3. Ensure the Boss is listening for new units
 	if not units_manager.unit_spawned.is_connected(_on_unit_registered):
 		units_manager.unit_spawned.connect(_on_unit_registered)
-	
 	# 4. Tell the other Managers to spawn their things
 	units_manager.setup_units(map_resource)
 #	objects_manager.setup_objects(map_resource) # Pass the whole resource!
-	
 	# 5. Position the camera
 	_setup_camera(map_resource)
-	
 	if not objects_manager.object_spawned.is_connected(_on_object_registered):
 		objects_manager.object_spawned.connect(_on_object_registered)
 		
@@ -137,58 +88,133 @@ func _initialize_battle(map_resource: MapData) -> void:
 	# Ensure we stay in exploration
 	Globals.current_mode = Globals.GameMode.EXPLORATION
 	print("[SYSTEM] Map initialized. Mode: EXPLORATION")
+	_setup_exploration_party()
 	
-	# Do NOT call _start_player_turn() here!
-	# Only set the active unit for the PlayerController to move
-	if player_team.get_child_count() > 0 and player_controller:
-		player_controller.active_unit = player_team.get_child(0)
-	# ensure controller's game reference (optional, safe)
-	if player_controller.has_method("set") == false and player_controller.has_variable("game"):
-		player_controller.game = self
+	# Ensure PlayerController.active_unit is set for exploration movement
+	if player_team.get_child_count() > 0:
+		var lead = player_team.get_child(0)
+		_set_active_unit(lead)
+		_set_selected_unit(lead)
+		
+	var pc = _get_player_controller()
+	if pc: pc.game = self # Only thing _set_active_unit doesn't do
+
+# --- MAP & QUEST STUFF ---
+func change_map(new_map_resource: MapData) -> void:
+	print("[DEBUG] Players at start of change_map: ", player_team.get_child_count())
+	print("[SYSTEM] Changing map to: ", new_map_resource.resource_path)
+	selector.set_process(false)
+	
+	occupancy_grid.clear()
+	
+	for unit in enemy_team.get_children(): unit.queue_free()
+	for unit in neutral_team.get_children(): unit.queue_free()
+	for obj in objects_manager.get_children(): obj.queue_free()
+	
+	await get_tree().process_frame
+	
+	_initialize_battle(new_map_resource)
+	
+	# WAIT: Give the MapManager and TileMap a frame to settle
+	await get_tree().process_frame
+	
+	var start_cell = Vector2i(5, 5) 
+	var players = player_team.get_children()
+	
+	print("[DEBUG] Found %d player units to teleport" % players.size())
+	
+	for i in range(players.size()):
+		var p = players[i] as Unit
+		if not p: continue
+		
+		var target_cell = start_cell + Vector2i(0, i)
+		var world_pos = map_manager.cell_to_floor(target_cell)
+		
+		# LOGGING THE STATE
+		print("[DEBUG] Teleporting %s to Cell %s (World Pos: %s)" % [p.name, target_cell, world_pos])
+		
+		p.global_position = world_pos
+		p.visible = true
+		p.z_index = 10 # Force them above the tilemap
+		
+		# Check if the unit is actually in the tree
+		if not p.is_inside_tree():
+			print("[ERROR] %s is NOT in the scene tree!" % p.name)
+		
+		register_unit_position(p, target_cell)
+	
+	# Verify camera
+	_setup_camera(new_map_resource)
+	
+	await get_tree().process_frame
+	selector.set_process(true)
+	print("--- MAP CHANGE FINISHED ---\n")
+
+func _handle_npc_interaction(npc: Unit):
+	# Stop player movement if they were moving
+	if active_unit:
+		active_unit.path.clear()
+		active_unit.is_moving = false
+
+	if npc.stats.character_name == "Elder":
+		_process_quest_logic()
+	# Inside _handle_npc_interaction
+	if npc.stats.character_name == "GateGuard":
+		var field_map = load("res://Resources/Maps/FieldMap.tres")
+		change_map(field_map)
+
+func _process_quest_logic():
+	var state = Globals.quests["slime_hunt"]
+	var npc_name = "Elder"
+	
+	match state:
+		Globals.QuestState.NOT_STARTED:
+			main_ui.show_dialogue(npc_name, "Welcome! A blue slime is terrorizing the fields. Can you help?")
+			Globals.quests["slime_hunt"] = Globals.QuestState.ACTIVE
+			print("Quest Started")
+		
+		Globals.QuestState.ACTIVE:
+			main_ui.show_dialogue(npc_name, "The slime is still in the fields to the East.")
+			print("Quest OnGoing")
+			
+		Globals.QuestState.COMPLETED:
+			main_ui.show_dialogue(npc_name, "Incredible! You've saved us. Take this experience.")
+			award_quest_xp(500)
+			Globals.quests["slime_hunt"] = Globals.QuestState.REWARDED
+			print("Quest Reward")
+			
+		Globals.QuestState.REWARDED:
+			main_ui.show_dialogue(npc_name, "Enjoy your stay in our town.")
+			print("Quest Ended")
 
 # --- COMBAT TRANSITION ---
-func start_combat(initiator: Unit):
-	if Globals.current_mode == Globals.GameMode.COMBAT:
+func start_combat(_initiator: Unit):
+	if Globals.current_mode == Globals.GameMode.COMBAT: 
 		return
 	
-	print("[SYSTEM] Combat Started by: ", initiator.name)
 	Globals.current_mode = Globals.GameMode.COMBAT
+	# Disable exploration movement, Enable combat grid
+	_get_player_controller().set_process(false)
+	combat_input.set_process(true)
 	
-	# Clear any highlights from exploration
-	if highlights:
-		highlights.active_unit = null
-		highlights.queue_redraw()
-		
 	_stop_all_unit_movement()
 	
-	# If the initiator is a player character, make them the active/selected unit
-	if initiator and initiator.data and initiator.data.is_player_controlled:
-	# Update game-level active/selected unit (updates UI)
-		_set_active_unit(initiator)
-		_set_selected_unit(initiator)
+	# FIX: Ensure we know which player character was "active" in exploration
+	var pc = _get_player_controller()
+	var player_to_focus = pc.active_unit if pc and pc.active_unit else player_team.get_child(0)
 
-	# Sync PlayerController so input will route to the initiator
-		var pc = _get_player_controller()
-		if pc:
-			pc.active_unit = initiator
-			# ensure pc.game is set (some implementations expect this)
-			if pc.has_method("set"):
-				# no-op for safety; you can set pc.game = self if desired
-				pass
-			print("[SYSTEM] PlayerController synced to initiator:", pc, "->", initiator.name)
-		else:
-			print("[SYSTEM] Warning: PlayerController not found to sync active unit.")
-
-	# If initiator was an enemy or non-player, fallback selection happens in _start_player_turn
-	_start_player_turn() # Or check initiative
+	# This one call handles: pc sync, skill bar update, and grid cursor snapping!
+	_set_active_unit(player_to_focus)
+	_set_selected_unit(player_to_focus)
+	
+	_start_player_turn()
 
 func _stop_all_unit_movement():
 	for unit in all_units:
 		unit.path.clear()
 		unit.is_moving = false
 		# Snap them to the nearest cell so they aren't stuck between tiles
-		var cell = map_manager.world_to_cell(unit.global_position)
-		unit.global_position = map_manager.cell_to_world(cell)
+		unit.snap_to_cell(unit.get_cell())
 
 # --- COMBAT LOGIC ---
 
@@ -213,6 +239,12 @@ func _on_attack_requested(index: int) -> void:
 		if attack.hold_vfx:
 			active_hold_vfx = WORLD_VFX_SCENE.instantiate()
 			active_unit.add_child(active_hold_vfx)
+			# CALCULATE OFFSET:
+			# Since active_unit's origin (0,0) is the floor, 
+			# we move the VFX up to the chest area.
+			#var chest_offset = (active_unit.sprite.offset.y / 2.0) * active_unit.data.visual_scale
+			#active_hold_vfx.position = Vector2(0, chest_offset) # Use local position!
+			active_hold_vfx.position = Vector2(0, -16) # Use local position!
 			active_hold_vfx.setup(attack.hold_vfx)
 
 		_set_interaction_mode(InteractionMode.ATTACK)
@@ -228,18 +260,18 @@ func _stop_hold_effects() -> void:
 func _handle_attack_input(cell: Vector2i) -> void:
 	var attack = active_unit.equipped_attack
 	var stats = active_unit.stats
-	var attacker_cell = map_manager.world_to_cell(active_unit.global_position)
+	var attacker_cell = active_unit.get_cell()
 	
 	# --- 1. PRE-CHECK DISTANCE ---
 	# Check distance using your footpint function
-	var dist = _get_footprint_distance(map_manager.world_to_cell(active_unit.global_position), active_unit.data.grid_size, cell)
+	var dist = _get_footprint_distance(attacker_cell, active_unit.data.grid_size, cell)
 	if dist > attack.attack_range:
 		print("Out of range!")
 		return
 	
 	# --- NEW: LINE OF SIGHT CHECK ---
 	# We check from the attacker to the specific cell they just clicked
-	if not map_manager.is_line_clear(attacker_cell, cell):
+	if not map_manager.is_line_clear(attacker_cell, cell): # Added 'true' to ignore target cell
 		_send_to_log("Target out of sight!", Color.GRAY)
 		return
 	
@@ -296,7 +328,7 @@ func _execute_multi_target_attack(target_cells: Array[Vector2i]) -> void:
 
 	# --- 1. CASTING PHASE ---
 	var active_vfx_nodes: Array[Node] = []
-
+	
 	# Visual on the Unit
 	if attack.casting_vfx:
 		var vfx = WORLD_VFX_SCENE.instantiate()
@@ -310,7 +342,7 @@ func _execute_multi_target_attack(target_cells: Array[Vector2i]) -> void:
 		for cell in target_cells:
 			var target_vfx = WORLD_VFX_SCENE.instantiate()
 			world.add_child(target_vfx)
-			target_vfx.global_position = map_manager.cell_to_world(cell)
+			target_vfx.global_position = map_manager.cell_to_center(cell)
 			target_vfx.setup(attack.target_cast_vfx)
 			active_vfx_nodes.append(target_vfx)
 
@@ -327,7 +359,8 @@ func _execute_multi_target_attack(target_cells: Array[Vector2i]) -> void:
 	# 2. TARGET LOOP
 	for i in range(target_cells.size()):
 		var target_cell = target_cells[i]
-		var target_pos = map_manager.cell_to_world(target_cell)
+		#var target_pos = map_manager.cell_to_world(target_cell)
+		var tile_center = map_manager.cell_to_center(target_cell)
 		
 		# PROJECTILE PHASE
 		if attack.has_projectile:
@@ -335,17 +368,22 @@ func _execute_multi_target_attack(target_cells: Array[Vector2i]) -> void:
 			if proj_scene:
 				var proj = proj_scene.instantiate()
 				get_parent().add_child(proj)
-				proj.launch(attack.projectile_vfx, active_unit.global_position, target_pos, attack.projectile_speed, attack.projectile_sfx)
-				await proj.arrived 
+				# Use your working chest height math
+				var chest_height = (active_unit.sprite.offset.y / 2.0) * active_unit.data.visual_scale
+				var launch_pos = active_unit.global_position + Vector2(0, chest_height)
+				
+				# Target the top-left of the tile (matching old version)
+				proj.launch(attack.projectile_vfx, launch_pos, tile_center, attack.projectile_speed, attack.projectile_sfx)
+				await proj.arrived
 		
 		# IMPACT PHASE (Only once at the CENTER of the target_cell)
 		if attack.impact_sfx:
-			play_sfx(attack.impact_sfx, target_pos)
+			play_sfx(attack.impact_sfx, tile_center)
 		
 		if attack.impact_vfx:
 			var vfx = WORLD_VFX_SCENE.instantiate()
 			world.add_child(vfx)
-			vfx.global_position = target_pos
+			vfx.global_position = tile_center
 			vfx.setup(attack.impact_vfx)
 		
 		
@@ -357,7 +395,7 @@ func _execute_multi_target_attack(target_cells: Array[Vector2i]) -> void:
 		if attack.screen_zoom_type != Globals.ZoomType.NONE:
 			var cam = get_viewport().get_camera_2d()
 			if cam:
-				cam.apply_impact_zoom(attack.screen_zoom_type, target_pos)
+				cam.apply_impact_zoom(attack.screen_zoom_type, tile_center)
 
 		# 3. SCREEN FLASH
 		if attack.use_screen_flash:
@@ -375,7 +413,7 @@ func _execute_multi_target_attack(target_cells: Array[Vector2i]) -> void:
 			action.execute_skill(active_unit, null, target_cell, attack, self)
 		
 		# 3. AOE LOGIC (Apply hits to victims)
-		var attacker_cell = map_manager.world_to_cell(active_unit.global_position)
+		var attacker_cell = active_unit.get_cell()
 		# PASS attacker_cell HERE:
 		var affected_tiles = _get_aoe_tiles(target_cell, attack.aoe_range, attack.aoe_shape, attacker_cell)
 		for cell in affected_tiles:
@@ -389,7 +427,8 @@ func _execute_multi_target_attack(target_cells: Array[Vector2i]) -> void:
 				if attack.hit_vfx:
 					var h_vfx = WORLD_VFX_SCENE.instantiate()
 					world.add_child(h_vfx)
-					h_vfx.global_position = victim.global_position
+					var chest_offset = -20 * victim.data.visual_scale
+					h_vfx.global_position =  victim.global_position + Vector2(0, chest_offset)
 					h_vfx.setup(attack.hit_vfx)
 					
 				_apply_attack_damage(attack, active_unit, victim, target_cell) # Pass target_cell here too
@@ -577,30 +616,32 @@ func _process_tick_effects(victim: Unit, final_amount: int, type: Globals.Damage
 # --- SELECTION & HIGHLIGHTS ---
 
 func _handle_selection(cell: Vector2i) -> void:
-	# Use the more generic occupant getter since we have objects now
 	var occupant = _get_occupant_at_cell(cell)
 	
 	if occupant is Unit:
-		_set_selected_unit(occupant)
-		if occupant.data.is_player_controlled:
-			_set_active_unit(occupant)
-		else:
-			_set_active_unit(null) # Can't control enemies
-	elif occupant is WorldObject:
-		# You might want a _set_selected_object later for a destructible info panel!
-		_set_selected_unit(null)
-		_set_active_unit(null)
+		# 1. Check Role
+		match occupant.data.role:
+			Globals.UnitRole.NEUTRAL:
+				_handle_npc_interaction(occupant)
+				_set_selected_unit(occupant) # Still show stats if you want
+			
+			Globals.UnitRole.PLAYER:
+				_set_selected_unit(occupant)
+				_set_active_unit(occupant)
+				main_ui.hide_dialogue() # Close dialogue if we switch to a player
+				
+			Globals.UnitRole.ENEMY:
+				_set_selected_unit(occupant)
+				_set_active_unit(null)
 	else:
 		_set_active_unit(null)
 		_set_selected_unit(null)
+		main_ui.hide_dialogue()
 
 func _set_selected_unit(unit: Unit) -> void:
-	if unit:
-		print("[UI] Selected Unit: ", unit.name)
-	else:
-		print("[UI] Selection Cleared")
+	if selected_unit == unit: return # Optimization: don't repeat
 	
-	# Clean up previous selection visual if your Unit script has a highlight
+	# Clean up previous selection visual
 	if selected_unit and is_instance_valid(selected_unit):
 		selected_unit.set_selected(false)
 		
@@ -611,33 +652,41 @@ func _set_selected_unit(unit: Unit) -> void:
 	
 	if selected_unit:
 		selected_unit.set_selected(true)
+		print("[UI] Selected Unit: ", unit.name)
+	else:
+		print("[UI] Selection Cleared")
 
 func _set_active_unit(unit: Unit) -> void:
-	if unit:
-		print("[GAME] Active Unit set to: ", unit.name)
-	else:
-		print("[GAME] Active Unit cleared")
-	
-	# Disconnect old signals if they exist
-	if active_unit and active_unit.stats.cooldowns_updated.is_connected(_on_stats_updated):
-		active_unit.stats.cooldowns_updated.disconnect(_on_stats_updated)
+	# 1. Clean up old active unit signals
+	if active_unit and is_instance_valid(active_unit):
+		if active_unit.stats.cooldowns_updated.is_connected(_on_stats_updated):
+			active_unit.stats.cooldowns_updated.disconnect(_on_stats_updated)
 
 	active_unit = unit
 	
-	# Only update the skill bar if it's a player unit; otherwise, clear it
+	# 2. Update UI & Controller
+	var pc = _get_player_controller()
+	
 	if active_unit and active_unit.data.is_player_controlled:
 		main_ui.skill_bar.update_buttons(active_unit)
-		if not active_unit.stats.cooldowns_updated.is_connected(_on_stats_updated):
-			active_unit.stats.cooldowns_updated.connect(_on_stats_updated)
+		active_unit.stats.cooldowns_updated.connect(_on_stats_updated)
+		if pc: pc.active_unit = active_unit
 	else:
-		main_ui.skill_bar.update_buttons(null) # This hides the bar
+		main_ui.skill_bar.update_buttons(null)
+		if pc: pc.active_unit = null
 	
-	# Update Highlights (Move/Attack range)
+	# 3. Handle Highlights
 	if highlights:
 		highlights.active_unit = unit
 		highlights.cached_move_range.clear() 
 		highlights.cached_path.clear()       
 		_update_highlights()
+	
+	# 4. Snap Cursor (Combat Only)
+	if Globals.current_mode == Globals.GameMode.COMBAT and unit != null:
+		var cell = unit.get_cell()
+		if combat_input:
+			combat_input.set_cursor_cell(cell)
 
 func _on_stats_updated():
 	main_ui.skill_bar.update_buttons(active_unit)
@@ -674,13 +723,27 @@ func _send_to_log(msg: String, color: Color = Color.WHITE) -> void:
 # Change '-> Unit' to '-> Node2D' or remove the type hint entirely
 func _get_occupant_at_cell(cell: Vector2i) -> Node2D:
 	if occupancy_grid.has(cell):
-		return occupancy_grid[cell]
+		var occupant = occupancy_grid[cell]
+		# Check if the node still exists and hasn't been deleted
+		if is_instance_valid(occupant) and not occupant.is_queued_for_deletion():
+			return occupant
+		else:
+			occupancy_grid.erase(cell) # Clean up the ghost entry
 	return null
 
 func _handle_unit_death(unit: Unit) -> void:
 	if not is_instance_valid(unit): return
-
+	
+	# QUEST CHECK: If the unit that died is a specific target
+	if unit.stats.character_name == "QuestSlime":
+		if Globals.quests["slime_hunt"] == Globals.QuestState.ACTIVE:
+			Globals.quests["slime_hunt"] = Globals.QuestState.COMPLETED
+			_send_to_log("Quest Objective Complete! Return to Town.", Color.AQUA)
+			print("You kill your target!")
+	
 	_send_to_log("%s has been slain!" % unit.name, Color.ORANGE_RED)
+	print("%s has been slain!" % unit.name)
+	print("stats name is %s" % unit.stats.character_name)
 	_award_kill_xp(unit)
 	# 1. Clear the tiles
 	unregister_unit(unit)
@@ -691,15 +754,22 @@ func _handle_unit_death(unit: Unit) -> void:
 	if selected_unit == unit:
 		_set_selected_unit(null)
 	
-	# Use a small call_deferred to ensure the unit is removed from the tree 
-	# before the manager checks if the group is empty
-	#unit.get_parent().remove_child(unit)
-	unit.queue_free()
+	if unit.data.role == Globals.UnitRole.PLAYER:
+		# GRAVEYARD LOGIC: Don't delete, just hide
+		unit.visible = false
+		unit.process_mode = PROCESS_MODE_DISABLED # Stop AI/Movement
+		# Move them far away so they don't accidentally get clicked
+		unit.global_position = Vector2(-9999, -9999) 
+		print("%s in Graveyard!" % unit.name)
+	else:
+		# Enemies/Neutrals still die for real
+		unit.queue_free()
 	
 	# MANUALLY TRIGGER CHECK
 	#_check_end_conditions()
 	# Small delay to let the tree update, then check if someone won
 	get_tree().create_timer(0.1).timeout.connect(_check_end_conditions)
+	
 
 func _award_kill_xp(killed_unit: Unit) -> void:
 	var xp_to_give = killed_unit.stats.base_xp_value
@@ -742,7 +812,7 @@ func _handle_movement(target_cell: Vector2i) -> void:
 	if not active_unit or active_unit.is_moving:
 		return
 		
-	var start_cell = map_manager.world_to_cell(active_unit.global_position)
+	var start_cell = active_unit.get_cell()
 	
 	# NEW: Instead of just clearing a dictionary, we tell the map the unit "lifted"
 	# its entire footprint off the grid.
@@ -764,7 +834,7 @@ func _handle_movement(target_cell: Vector2i) -> void:
 		
 	var world_path := PackedVector2Array()
 	for c in grid_path:
-		world_path.append(map_manager.cell_to_world(c))
+		world_path.append(map_manager.cell_to_floor(c))
 		
 	if not active_unit.cell_entered.is_connected(_on_unit_stepped_on_cell):
 		active_unit.cell_entered.connect(_on_unit_stepped_on_cell.bind(active_unit))
@@ -803,8 +873,49 @@ func _on_unit_movement_finished(unit: Unit, final_cell: Vector2i) -> void:
 		highlights.cached_move_range.clear()
 		highlights.cached_path.clear() # <--- Add this to hide the ghost
 		highlights.queue_redraw()
-	var cell = map_manager.world_to_cell(unit.global_position)
+	var cell = unit.get_cell()
 	map_manager.apply_surface_gameplay_effect(cell, unit)
+	
+	if Globals.current_mode == Globals.GameMode.EXPLORATION and Globals.player_count == 1:
+		var players = player_team.get_children()
+		
+		# Only run if the unit that just moved is the Leader (Player 1)
+		if unit == players[0]:
+			_update_follower_positions(final_cell)
+
+func _update_follower_positions(leader_cell: Vector2i):
+	# 1. Update the trail. Lead cell goes to the front.
+	movement_history.push_front(leader_cell)
+	
+	# 2. Keep the history only as long as we have followers
+	var players = player_team.get_children()
+	if movement_history.size() > players.size():
+		movement_history.pop_back()
+		
+	# 3. Tell followers to move to the history slots
+	# Player 0 is Leader, Player 1 follows Leader's previous spot, etc.
+	for i in range(1, players.size()):
+		if movement_history.size() > i:
+			var follower = players[i]
+			var target_cell = movement_history[i]
+			
+			# CHANGE: Use cell_to_floor here as well so the 
+			# followers don't "snap" to corners while walking.
+			var path = PackedVector2Array([map_manager.cell_to_floor(target_cell)])
+			follower.leave_current_cells()
+			follower.follow_path(path, 0.0)
+			
+			# Ensure they register their new spot when they arrive
+			if not follower.movement_finished.is_connected(follower.occupy_new_cells):
+				follower.movement_finished.connect(follower.occupy_new_cells, CONNECT_ONE_SHOT)
+
+# Initialize the history with the starting positions so they don't teleport
+func _setup_exploration_party():
+	movement_history.clear()
+	var players = player_team.get_children()
+	for p in players:
+		var cell = map_manager.world_to_cell(p.global_position)
+		movement_history.push_back(cell)
 
 func is_cell_vacant(cell: Vector2i, ignore_unit: Unit = null) -> bool:
 	if not occupancy_grid.has(cell):
@@ -883,93 +994,82 @@ func _get_footprint_distance(origin: Vector2i, size: Vector2i, target: Vector2i)
 				shortest_dist = d
 	return shortest_dist
 	
-# --- AOE helper used by attacks, detection, visuals ---
-# center (Vector2i), radius (int), shape (Globals.AreaShape.*)
-# facing (Vector2) is used for LINE / CONE / CLEAVE (it should be normalized)
-# fov_deg used for CONE
-func _get_aoe_tiles(center: Vector2i, radius: int, shape := Globals.AreaShape.SQUARE, facing := Vector2.ZERO, fov_deg := 90.0) -> Array:
-	var tiles: Array = []
+func _get_aoe_tiles(center: Vector2i, radius: int, shape: Globals.AreaShape, origin: Vector2i = Vector2i.ZERO, fov_deg := 90.0, facing_override := Vector2.ZERO) -> Array[Vector2i]:
+	var tiles: Array[Vector2i] = []
+	
+	if radius <= 0: return [center]
 
-	if radius <= 0:
-		return tiles
+	# Determine facing
+	var facing_vec: Vector2
+	if facing_override != Vector2.ZERO:
+		facing_vec = facing_override.normalized()
+	else:
+		var diff = center - origin
+		facing_vec = Vector2(clampi(diff.x, -1, 1), clampi(diff.y, -1, 1)).normalized()
+	
+	# Used for LINE and CLEAVE
+	var dir = Vector2i(roundi(facing_vec.x), roundi(facing_vec.y))
 
 	match shape:
 		Globals.AreaShape.SQUARE:
-			# To get Range 1 = 2x2, we need the loop to go from 0 to 1 (2 steps)
-			# To get Range 2 = 3x3, we need the loop to go from -1 to 1 (3 steps)
+			# Traditional radius (Radius 1 = 3x3, Radius 2 = 5x5)
+			for x in range(-radius, radius + 1):
+				for y in range(-radius, radius + 1):
+					tiles.append(center + Vector2i(x, y))
+
+		Globals.AreaShape.SQUARESIZE:
+			# Your specific offset logic for even/odd total sizes
 			var start_offset: int
 			var end_offset: int
-
-			if radius % 2 == 0: # EVEN (2, 4, 6...)
+			
+			if radius % 2 == 0: # EVEN (e.g., 2 becomes a 2x2 box)
 				start_offset = -(radius / 2) + 1
 				end_offset = (radius / 2)
-			else: # ODD (1, 3, 5...)
+			else: # ODD (e.g., 3 becomes a 3x3 box)
 				start_offset = -(radius / 2)
 				end_offset = (radius / 2)
 
 			for x in range(start_offset, end_offset + 1):
 				for y in range(start_offset, end_offset + 1):
-					#var cell = center + Vector2i(x, y)
 					tiles.append(center + Vector2i(x, y))
 
 		Globals.AreaShape.DIAMOND:
-			# Manhattan distance
 			for x in range(-radius, radius + 1):
 				for y in range(-radius, radius + 1):
 					if abs(x) + abs(y) <= radius:
 						tiles.append(center + Vector2i(x, y))
 
 		Globals.AreaShape.LINE:
-			# Straight line from center in facing direction
-			var dir = facing.normalized()
-			var dir_i = Vector2i(roundi(dir.x), roundi(dir.y))
-			if dir_i == Vector2i.ZERO:
-				dir_i = Vector2i.UP
-			for i in range(1, radius + 1):
-				tiles.append(center + dir_i * i)
+			for i in range(radius):
+				tiles.append(center + (dir * i))
 
 		Globals.AreaShape.CLEAVE:
-			# A wide short cone / semicircle in front: include tiles with positive dot and within radius (no strict angle)
-			var f = facing.normalized()
-			if f == Vector2.ZERO:
-				f = Vector2.UP
-			for x in range(-radius, radius + 1):
-				for y in range(-radius, radius + 1):
-					var offset = Vector2i(x, y)
-					if offset == Vector2i.ZERO: continue
-					if max(abs(x), abs(y)) > radius: continue
-					var t = center + offset
-					var dir_to = (Vector2(t) - Vector2(center)).normalized()
-					if f.dot(dir_to) > 0.0:
-						if map_manager.is_line_clear(center, t):
-							tiles.append(t)
+			tiles.append(center)
+			if abs(dir.x) == 1 and abs(dir.y) == 1:
+				tiles.append(center - Vector2i(dir.x, 0))
+				tiles.append(center - Vector2i(0, dir.y))
+			else:
+				var side_dir = Vector2i(-dir.y, dir.x) 
+				tiles.append(center + side_dir)
+				tiles.append(center - side_dir)
 
 		Globals.AreaShape.CONE:
-			# True cone using angle. fov_deg is total angle.
 			var half_fov = fov_deg * 0.5
-			var fvec = facing.normalized()
-			if fvec == Vector2.ZERO:
-				fvec = Vector2.UP
 			for x in range(-radius, radius + 1):
 				for y in range(-radius, radius + 1):
 					var offset = Vector2i(x, y)
-					if offset == Vector2i.ZERO: continue
-					if max(abs(x), abs(y)) > radius: continue
+					if offset == Vector2i.ZERO:
+						tiles.append(center)
+						continue
+					
 					var t = center + offset
-					var dir_to = (Vector2(t) - Vector2(center)).normalized()
-					var angle = rad_to_deg(fvec.angle_to(dir_to))
+					var dir_to = Vector2(offset).normalized()
+					var angle = rad_to_deg(facing_vec.angle_to(dir_to))
+					
 					if abs(angle) <= half_fov:
-						# LOS check so cone won't go through walls (optional but usually desired)
 						if map_manager.is_line_clear(center, t):
 							tiles.append(t)
-
-		_:
-			# Fallback: square
-			for x in range(-radius, radius + 1):
-				for y in range(-radius, radius + 1):
-					if max(abs(x), abs(y)) <= radius:
-						tiles.append(center + Vector2i(x, y))
-
+	
 	return tiles
 
 func apply_knockback(victim: Unit, direction: Vector2i, distance: int) -> void:
@@ -989,7 +1089,9 @@ func apply_knockback(victim: Unit, direction: Vector2i, distance: int) -> void:
 			
 	if final_cell != current_cell:
 		register_unit_position(victim, final_cell)
-		victim.global_position = map_manager.cell_to_world(final_cell)
+		# CHANGE: Use cell_to_floor (the one with the +Vector2(16,16) offset)
+		# to ensure the unit stays centered in the tile after being pushed.
+		victim.global_position = map_manager.cell_to_floor(final_cell)
 		victim.cell_entered.emit(final_cell)
 		_send_to_log("%s was knocked back!" % victim.name, Color.GOLD)
 
@@ -997,7 +1099,7 @@ func apply_knockback(victim: Unit, direction: Vector2i, distance: int) -> void:
 
 func _start_unit_turn(unit: Node2D) -> void:
 	# 1. Check the surface beneath the unit
-	var cell = map_manager.world_to_cell(unit.global_position)
+	var cell = unit.get_cell()
 	map_manager.apply_surface_gameplay_effect(cell, unit)
 	
 	# 2. Now process the buffs (This will include the burn they just got from the floor)
@@ -1010,6 +1112,7 @@ func _start_unit_turn(unit: Node2D) -> void:
 
 func _start_player_turn() -> void:
 	print("--- PLAYER TURN ---")
+	print("[TRACE] _start_player_turn() BEFORE - game.active_unit:", active_unit, " pc.active_unit:", _get_player_controller())
 	_send_to_log("--- PLAYER TURN ---", Color.WHITE)
 	Globals.current_state = Globals.TurnState.PLAYER_TURN
 	
@@ -1017,30 +1120,25 @@ func _start_player_turn() -> void:
 	# keep it as the active one. Otherwise, select the first available player unit.
 	var keep_active := false
 	if active_unit and is_instance_valid(active_unit) and active_unit is Unit:
-		# Must be player-controlled and alive
 		if active_unit.data and active_unit.data.is_player_controlled and active_unit.stats and active_unit.stats.health > 0:
 			keep_active = true
 
 	if not keep_active:
 		select_player_unit()
-	
+
 	# Sync PlayerController.active_unit so input binds to the same unit
 	var pc = _get_player_controller()
 	if pc:
-		# only set if active_unit is a player, otherwise clear
 		if active_unit and active_unit.data and active_unit.data.is_player_controlled:
 			pc.active_unit = active_unit
 		else:
 			pc.active_unit = null
-	
-	# Loop through all player units to process their buffs/burns
+
+	# Process buffs / start-of-turn logic
 	for unit in player_team.get_children():
 		if unit is Unit:
-			# Process start-of-turn buffs (these may change HP/states)
 			if unit.stats.has_method("apply_turn_start_buffs"):
 				unit.stats.apply_turn_start_buffs(unit, self)
-
-			# If a buff killed the unit at turn start, handle it
 			if unit.stats.health <= 0:
 				_handle_unit_death(unit)
 		
@@ -1051,6 +1149,7 @@ func _start_player_turn() -> void:
 	#		obj.stats.apply_turn_start_buffs(obj, self)
 	
 	#map_manager.tick_surfaces()
+	print("[TRACE] _start_player_turn() AFTER - game.active_unit:", active_unit, " pc.active_unit:", _get_player_controller())
 	player_team.replenish_all_stamina()
 
 func _on_end_turn_button_pressed() -> void:
@@ -1124,24 +1223,41 @@ func _trigger_victory() -> void:
 	
 	print("VICTORY!")
 	_send_to_log("--- VICTORY! ---", Color.GOLD)
-	#Globals.current_state = Globals.TurnState.VICTORY
 	
-	print("Combat Over! Returning to Exploration.")
-	_send_to_log("Area Cleared. Free movement enabled.", Color.GREEN)
+	# RESPAWN DEFEATED PLAYERS
+	var survivors = player_team.get_children().filter(func(u): return u.visible)
+	if survivors.size() > 0:
+		var spawn_pos = survivors[0].global_position
+		var spawn_cell = map_manager.world_to_cell(spawn_pos)
+		
+		for p in player_team.get_children():
+			if not p.visible: # This was a "dead" player
+				p.visible = true
+				p.process_mode = PROCESS_MODE_INHERIT
+				p.stats.current_hp = 1 # Respawn with 1 HP (or half?)
+				
+				# Place them near the survivor
+				var free_cell = spawn_cell + Vector2i(1, 0) 
+				p.global_position = map_manager.cell_to_world(free_cell)
+				register_unit_position(p, free_cell)
+				_send_to_log("%s has been revived!" % p.name, Color.GREEN)
 	
-	# Change mode back
+	# Transition back to Exploration
 	Globals.current_mode = Globals.GameMode.EXPLORATION
+	# Swap back
+	# CRITICAL: Reset state so _on_selector_clicked isn't blocked by 
+	# the 'if state != PLAYER_TURN' check. 
+	# Or, update the input check (see step 2).
+	Globals.current_state = Globals.TurnState.PLAYER_TURN 
+
+	_get_player_controller().set_process(true)
+	combat_input.set_process(false)
 	
-	# Reset UI
-	#main_ui.show_combat_elements(false) # Hide skill bars/end turn
 	_set_active_unit(null)
-	
-	# Refresh player for exploration
 	player_team.replenish_all_stamina()
 	
-	# If you have a specific unit the player was using, re-assign to controller
 	if player_team.get_child_count() > 0:
-		player_controller.active_unit = player_team.get_child(0)
+		_set_active_unit(player_team.get_child(0))
 
 func _trigger_game_over() -> void:
 	if Globals.current_mode != Globals.GameMode.COMBAT: return
@@ -1245,7 +1361,7 @@ func _apply_screen_flash(color: Color, duration: float) -> void:
 func play_hit_effect(vfx_resource: VisualEffectData, pos: Vector2):
 	var vfx = preload("uid://pc6usvw46jfj").instantiate()
 	world.add_child(vfx)
-	vfx.global_position = pos
+	vfx.global_position = pos + Vector2(0, -16)
 	vfx.setup(vfx_resource) # It will delete itself automatically
 
 func play_sfx(stream: AudioStream, position: Vector2 = Vector2.ZERO) -> AudioStreamPlayer2D:
@@ -1292,7 +1408,7 @@ func _spawn_damage_number(value: int, pos: Vector2, type: Globals.DamageType, re
 		label.scale = Vector2(3.0, 3.0)
 		label.add_theme_constant_override("outline_size", 4)
 	
-	label.global_position = pos + Vector2(-10, -20) # Start closer to unit head
+	label.global_position = pos + Vector2(-10, -45) # Start closer to unit head
 	
 	var tween = create_tween().set_parallel(true)
 	
@@ -1305,30 +1421,105 @@ func _spawn_damage_number(value: int, pos: Vector2, type: Globals.DamageType, re
 	
 	tween.finished.connect(label.queue_free)
 
+# --- INPUT HANDLING ---
+func hide_debug_panel() -> void:
+	var panel = $UI/MainUI/DebugPanel
+	panel.visible = !panel.visible
 
-# Helper that finds & caches the PlayerController node robustly
-func _get_player_controller() -> Node:
-	if player_controller and is_instance_valid(player_controller):
-		return player_controller
-	# 1) direct child of Game
-	if has_node("PlayerController"):
-		player_controller = get_node("PlayerController")
-		return player_controller
+func select_player_unit() -> void:
+	# 1. Find the player unit
+	var units = player_team.get_children()
+	if units.size() == 0:
+		return
+		
+	var unit_to_select = units[0]
+	
+	# 2. Select it (updates UI and Highlights)
+	_set_active_unit(unit_to_select)
+	
+	# 3. Move Camera and Clamp it
+	var cam = get_viewport().get_camera_2d()
+	if cam:
+		# CHANGE: Center on the visual middle, not the floor position
+		var visual_center = unit_to_select.global_position + Vector2(0, -32)
+		cam.global_position = visual_center
+		if cam.has_method("force_clamp"):
+			cam.force_clamp()
+			
 
-	# 2) under World (common layout)
-	if has_node("World/PlayerController"):
-		player_controller = get_node("Worlfd/PlayerController")
-		return player_controller
+func _on_selector_clicked(cell: Vector2i, button: int) -> void:
+	if is_attack_in_progress: return # Don't allow canceling mid-animation
+		
+	# Only enforce turn-based logic if we are actually in COMBAT mode
+	if Globals.current_mode == Globals.GameMode.COMBAT:
+		if Globals.current_state != Globals.TurnState.PLAYER_TURN:
+			return
 
-	# 3) fallback to group lookup (if you add it)
-	player_controller = get_tree().get_first_node_in_group("PlayerController")
-	return player_controller
-# --- INPUT OVERRIDE (Fixing Space Bar) ---
-func _input(event):
-	if event.is_action_pressed("ui_accept"): 
-		var mouse_cell = selector.current_cell
-		if fire_vfx_resource:
-			print("Space pressed: Spawning test fire at ", mouse_cell)
-			map_manager.apply_surface_to_cell(mouse_cell, Globals.SurfaceType.FIRE, 3, fire_vfx_resource)
-			# Consumes the input so it doesn't click buttons or attack
-			get_viewport().set_input_as_handled()
+	if button == MOUSE_BUTTON_LEFT:
+		if current_mode == InteractionMode.ATTACK:
+			_handle_attack_input(cell)
+		else:
+			_handle_selection(cell)
+	elif button == MOUSE_BUTTON_RIGHT:
+		# If we have an active player unit, handle their movement
+		if active_unit and active_unit.data.is_player_controlled:
+			if current_mode == InteractionMode.ATTACK:
+				var attack = active_unit.equipped_attack
+				_stop_hold_effects()
+				main_ui.skill_bar.set_button_text(current_attack_index, attack.attack_name)
+				_set_interaction_mode(InteractionMode.SELECT)
+				multi_target_selection.clear()
+			else:
+				_handle_movement(cell)
+				
+
+func _get_player_controller() -> PlayerController:
+	if is_instance_valid(player_controller):
+		return player_controller
+	return null
+	
+func _on_cursor_moved(new_cell: Vector2i) -> void:
+	# Hover logic: Show info but don't "activate" the unit
+	var occupant = _get_occupant_at_cell(new_cell)
+	if occupant is Unit:
+		_set_selected_unit(occupant)
+	else:
+		_set_selected_unit(null)
+	# Optionally center camera on cursor
+	# var cam = get_viewport().get_camera_2d(); cam.global_position = map_manager.cell_to_world(new_cell)
+
+func _on_combat_confirm(cell: Vector2i) -> void:
+	# Pass the "keyboard click" into your existing mouse click logic
+	_on_selector_clicked(cell, MOUSE_BUTTON_LEFT)
+	# Or call custom: _handle_grid_confirm(cell)
+
+func _on_combat_cancel() -> void:
+	# cancel selection or close UI
+	# e.g., exit attack mode or deselect
+	_set_active_unit(null) # or other logic
+	
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("cycle_unit"):
+		_cycle_player_units()
+
+func _cycle_player_units() -> void:
+	var players = player_team.get_children()
+	if players.is_empty(): return
+	
+	var next_index = 0
+	
+	# If we have someone selected, find the next one in the list
+	if active_unit and active_unit in players:
+		var current_index = players.find(active_unit)
+		next_index = (current_index + 1) % players.size()
+	
+	var unit_to_focus = players[next_index]
+	
+	# Select them
+	_set_active_unit(unit_to_focus)
+	_set_selected_unit(unit_to_focus)
+	
+	# Move the camera to them
+	var cam = get_viewport().get_camera_2d()
+	if cam:
+		cam.global_position = unit_to_focus.global_position

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="Stats" format=3 uid="uid://c8pip88alu3gk"]
+
+[ext_resource type="Script" uid="uid://cbjkyqk7ij6cq" path="res://Code/stats_data.gd" id="1_axuux"]
+
+[resource]
+script = ExtResource("1_axuux")
+character_name = "QuestSlime"
+race = "Monster"
+base_max_health = 10.0
+resistances = Dictionary[int, float]({
+3: -0.2,
+5: 0.2
+})
+metadata/_custom_type_script = "uid://cbjkyqk7ij6cq"

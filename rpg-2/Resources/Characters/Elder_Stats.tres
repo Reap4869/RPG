@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Stats" format=3 uid="uid://y780xeeg5058"]
+
+[ext_resource type="Script" uid="uid://cbjkyqk7ij6cq" path="res://Code/stats_data.gd" id="1_7ik5h"]
+
+[resource]
+script = ExtResource("1_7ik5h")
+character_name = "Elder"
+race = "Human"
+background = "Mage"
+character_class = "Mage"
+base_max_health = 500.0
+metadata/_custom_type_script = "uid://cbjkyqk7ij6cq"

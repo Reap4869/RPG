@@ -41,3 +41,4 @@ animations = [{
 [node name="Surface" type="AnimatedSprite2D" unique_id=1915498283]
 sprite_frames = SubResource("SpriteFrames_2jfrf")
 frame_progress = 0.82762647
+centered = false

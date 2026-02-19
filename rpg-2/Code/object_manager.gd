@@ -7,6 +7,7 @@ signal object_spawned(obj: WorldObject, cell: Vector2i)
 var spawn_counts: Dictionary = {}
 
 func _ready():
+	y_sort_enabled = true # Ensure all units depth-sort against each other
 	if stats:
 		# Connect the signal you made to the manager's death handler
 		stats.health_depleted.connect(_on_death)
