@@ -517,10 +517,8 @@ func _apply_attack_damage(attack: AttackResource, attacker: Node2D, victim: Node
 
 	# 7. Death Check
 	if victim.stats.health <= 0:
-		if victim is Unit:
-			_handle_unit_death(victim)
-		else:
-			_handle_object_death(victim)
+		_handle_combatant_death(victim)
+
 
 func _apply_tick_damage(victim: Node2D, amount: int, type: Globals.DamageType, buff_res: BuffResource = null, caster: Node2D = null) -> void:
 	var base_amount = float(amount)
@@ -612,7 +610,7 @@ func _process_tick_effects(victim: Node2D, final_amount: int, type: Globals.Dama
 		_spawn_damage_number(final_amount, victim.global_position, type, AttackResource.HitResult.HIT)
 		if victim.has_method("play_hit_flash"): victim.play_hit_flash()
 		if victim.stats.health <= 0:
-			_handle_unit_death(victim)
+			_handle_combatant_death(victim)
 # --- SELECTION & HIGHLIGHTS ---
 
 func _handle_selection(cell: Vector2i) -> void:
@@ -722,60 +720,68 @@ func _send_to_log(msg: String, color: Color = Color.WHITE) -> void:
 
 # Change '-> Unit' to '-> Node2D' or remove the type hint entirely
 func _get_occupant_at_cell(cell: Vector2i) -> Node2D:
-	if occupancy_grid.has(cell):
-		var occupant = occupancy_grid[cell]
-		# Check if the node still exists and hasn't been deleted
-		if is_instance_valid(occupant) and not occupant.is_queued_for_deletion():
-			return occupant
-		else:
-			occupancy_grid.erase(cell) # Clean up the ghost entry
+	if map_manager.grid_data.has(cell):
+		var cell_data = map_manager.grid_data[cell]
+		if cell_data.is_occupied and is_instance_valid(cell_data.occupant):
+			return cell_data.occupant # This returns Unit OR WorldObject
 	return null
 
-func _handle_unit_death(unit: Unit) -> void:
-	if not is_instance_valid(unit): return
+func _handle_combatant_death(target: Node2D) -> void:
+	if not is_instance_valid(target): return
 	
-	# QUEST CHECK: If the unit that died is a specific target
-	if unit.stats.character_name == "QuestSlime":
-		if Globals.quests["slime_hunt"] == Globals.QuestState.ACTIVE:
-			Globals.quests["slime_hunt"] = Globals.QuestState.COMPLETED
-			_send_to_log("Quest Objective Complete! Return to Town.", Color.AQUA)
-			print("You kill your target!")
-	
-	_send_to_log("%s has been slain!" % unit.name, Color.ORANGE_RED)
-	print("%s has been slain!" % unit.name)
-	print("stats name is %s" % unit.stats.character_name)
-	_award_kill_xp(unit)
-	# 1. Clear the tiles
-	unregister_unit(unit)
-	
-	# 2. Safety: Clear UI references
-	if active_unit == unit:
-		_set_active_unit(null)
-	if selected_unit == unit:
-		_set_selected_unit(null)
-	
-	if unit.data.role == Globals.UnitRole.PLAYER:
-		# GRAVEYARD LOGIC: Don't delete, just hide
-		unit.visible = false
-		unit.process_mode = PROCESS_MODE_DISABLED # Stop AI/Movement
-		# Move them far away so they don't accidentally get clicked
-		unit.global_position = Vector2(-9999, -9999) 
-		print("%s in Graveyard!" % unit.name)
+	var t_data = target.data
+	var t_stats = target.stats
+	var t_name = target.name if "name" in target else "Unknown"
+
+	# 1. TRIGGER DEATH SKILL (Explosive Barrels / Final Unit Attacks)
+	# We use a slight delay or call it before clearing the grid so it has a valid origin
+	if t_data and t_data.get("death_skill"):
+		_execute_multi_target_attack([target.get_cell()], t_data.death_skill)
+
+	# 2. QUEST & LOGGING
+	if target is Unit:
+		if t_stats.character_name == "QuestSlime":
+			if Globals.quests.get("slime_hunt") == Globals.QuestState.ACTIVE:
+				Globals.quests["slime_hunt"] = Globals.QuestState.COMPLETED
+				_send_to_log("Quest Objective Complete!", Color.AQUA)
+		
+		_send_to_log("%s has been slain!" % t_name, Color.ORANGE_RED)
 	else:
-		# Enemies/Neutrals still die for real
-		unit.queue_free()
-	
-	# MANUALLY TRIGGER CHECK
-	#_check_end_conditions()
-	# Small delay to let the tree update, then check if someone won
+		_send_to_log("%s was destroyed!" % t_name, Color.GRAY)
+
+	# 3. AWARD XP (Objects now have a 'stats.base_xp_value' too)
+	if t_stats and t_stats.get("base_xp_value") > 0:
+		_award_kill_xp(target)
+
+	# 4. MULTI-TILE UNREGISTER
+	# This replaces unregister_unit and unregister_object
+	_clear_occupancy_for(target)
+
+	# 5. UI & CLEANUP logic
+	if active_unit == target: _set_active_unit(null)
+	if selected_unit == target: _set_selected_unit(null)
+
+	if target is Unit and t_data.role == Globals.UnitRole.PLAYER:
+		# Player Graveyard Logic
+		target.visible = false
+		target.process_mode = PROCESS_MODE_DISABLED
+		target.global_position = Vector2(-9999, -9999) 
+	else:
+		target.queue_free()
+
 	get_tree().create_timer(0.1).timeout.connect(_check_end_conditions)
 
-func _handle_object_death(obj: WorldObject) -> void:
-	_send_to_log("%s was destroyed!" % obj.name, Color.GRAY)
-	_award_kill_xp(obj)
-	unregister_object(obj)
-	obj.queue_free()
-	get_tree().create_timer(0.1).timeout.connect(_check_end_conditions)
+func _clear_occupancy_for(target: Node2D) -> void:
+	var origin = target.get_cell()
+	var g_size = target.data.grid_size # Both UnitData and ObjectData have this now
+	
+	for x in range(g_size.x):
+		for y in range(g_size.y):
+			var cell = origin + Vector2i(x, y)
+			if map_manager.grid_data.has(cell):
+				var cell_data = map_manager.grid_data[cell]
+				cell_data.is_occupied = false
+				cell_data.occupant = null
 
 func _award_kill_xp(killed_unit: Node2D) -> void:
 	var xp_to_give = killed_unit.stats.base_xp_value
@@ -817,7 +823,7 @@ func _handle_movement(target_cell: Vector2i) -> void:
 	
 	# NEW: Instead of just clearing a dictionary, we tell the map the unit "lifted"
 	# its entire footprint off the grid.
-	unregister_unit(active_unit) 
+	_clear_occupancy_for(active_unit)
 	
 	var result = map_manager.get_path_with_stamina(
 		start_cell, 
@@ -929,7 +935,7 @@ func is_cell_vacant(cell: Vector2i, ignore_unit: Unit = null) -> bool:
 	return false
 
 func register_unit_position(unit: Unit, start_cell: Vector2i) -> void:
-	unregister_unit(unit) # Always clear first
+	_clear_occupancy_for(unit)
 	
 	var size = unit.data.grid_size
 	for x in range(size.x):
@@ -945,22 +951,6 @@ func register_unit_position(unit: Unit, start_cell: Vector2i) -> void:
 				cell_info.is_occupied = true
 				cell_info.occupant = unit
 
-func unregister_unit(unit: Unit) -> void:
-	if not unit: return
-	
-	var keys_to_remove = []
-	for cell in occupancy_grid.keys():
-		if occupancy_grid[cell] == unit:
-			keys_to_remove.append(cell)
-			
-			# NEW: Clear the MapManager data too
-			if map_manager.grid_data.has(cell):
-				map_manager.grid_data[cell].is_occupied = false
-				map_manager.grid_data[cell].occupant = null
-	
-	for key in keys_to_remove:
-		occupancy_grid.erase(key)
-
 func register_object_position(obj: WorldObject, cell: Vector2i) -> void:
 	occupancy_grid[cell] = obj
 	
@@ -972,17 +962,6 @@ func register_object_position(obj: WorldObject, cell: Vector2i) -> void:
 	
 	# Update AStar weights so pathfinding avoids the object
 	map_manager.update_astar_weights()
-
-func unregister_object(obj: WorldObject) -> void:
-	var keys_to_remove = []
-	for cell in occupancy_grid.keys():
-		if occupancy_grid[cell] == obj:
-			keys_to_remove.append(cell)
-			if map_manager.grid_data.has(cell):
-				map_manager.grid_data[cell].is_occupied = false
-				map_manager.grid_data[cell].occupant = null
-	for key in keys_to_remove:
-		occupancy_grid.erase(key)
 
 func _get_footprint_distance(origin: Vector2i, size: Vector2i, target: Vector2i) -> int:
 	var shortest_dist = 9999
@@ -1109,7 +1088,7 @@ func _start_unit_turn(unit: Node2D) -> void:
 	
 	# 3. Death check (in case the burn killed them)
 	if unit.stats.health <= 0:
-		_handle_unit_death(unit)
+		_handle_combatant_death(unit)
 
 func _start_player_turn() -> void:
 	print("--- PLAYER TURN ---")
@@ -1141,7 +1120,7 @@ func _start_player_turn() -> void:
 			if unit.stats.has_method("apply_turn_start_buffs"):
 				unit.stats.apply_turn_start_buffs(unit, self)
 			if unit.stats.health <= 0:
-				_handle_unit_death(unit)
+				_handle_combatant_death(unit)
 		
 	#Then for objects
 	#for obj in objects_manager.get_children():
